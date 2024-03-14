@@ -1,6 +1,5 @@
 import asyncio
 import concurrent.futures
-import sqlite3
 
 from aiogram import Bot, types, Dispatcher
 from aiogram.contrib.fsm_storage.memory import MemoryStorage

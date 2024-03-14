@@ -9,6 +9,7 @@ from ..modes import CircuitRace
 from handlers.common.loading import loading, loading_messages
 from image_generation import get_image
 from image_generation.game_modes.circuit_race import *
+from image_generation.cars import generate_card_picture
 from localisation.localisation import LANGUAGES, translate, translate_date
 from object_data import WEATHER, ALLOWED_MONTHS, ALLOWED_HOURS, ALLOWED_MINUTES, \
     DAYS_IN_MONTH, HINTS, TIRES_EMOJI, get_tires_by_index
@@ -202,6 +203,19 @@ async def select_tires(race: CircuitRace) -> None:
 
     while len(race.ready_players) != len(race.players):
         await asyncio.sleep(2)
+
+
+async def generate_cards(race: CircuitRace) -> None:
+    """ Players' cards generation. """
+    for player in race.players:
+        await loading(player)
+    for player in race.players:
+        for car_id in race.decks[player]:
+            tires = race.tires[player][car_id][0]
+            card = await get_image(generate_card_picture, player, car_id, False, tires)
+            race.cards[(player, car_id)] = card
+    for player in race.players:
+        await loading(player, end=True)
 
 
 @dp.callback_query_handler(text_contains='select-circuit_')

@@ -91,9 +91,10 @@ class CircuitRace(Race):
         self.weather: int | None = None
         self.player_score: int | None = None
         self.usernames: Dict[int, str] | None = None
-        self.decks: Dict[int, List[int]] = {}
+        self.decks: Dict[int, List[int]] = dict()
+        self.cards: Dict[Tuple[int, int], BytesIO] = dict()
         self.ready_players: List[int] = []
-        self.tires: Dict[int, Dict[int, List[str, float] | None]] = {}
+        self.tires: Dict[int, Dict[int, List[str, float] | None]] = dict()
         for player in self.players:
             active_players[player] = self
 

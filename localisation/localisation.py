@@ -29,6 +29,7 @@ def get_month_form_rus(month: str) -> str:
         form += 'я'
     else:
         form += 'а'
+    return form
 
 
 def translate_date(month: str, day: int, user_id: int = None, language: Language = None) -> str:

@@ -1,4 +1,5 @@
 from PIL import ImageDraw
+from PIL.Image import Image
 
 from loader import db
 from localisation.localisation import translate
@@ -6,7 +7,7 @@ from .common import get_fonts, open_image, recolor, get_rating_color
 from object_data import CAR_BRANDS, BRAND_COUNTRIES, get_car_rating
 
 
-def generate_card_picture1(user_id, car_id):
+def generate_card_picture(user_id: int, car_id: int, backside: bool = False, tires: str = None) -> Image:
     # info from database
     brand_id, model, power, body = \
         db.table('Cars').get('brand', 'model', 'power', 'body_icon').where(id=car_id)
@@ -120,7 +121,15 @@ def generate_card_picture1(user_id, car_id):
     margin = 45
     background.alpha_composite(flag_image, (margin, background.height - margin - flag_image.height))
 
+    # tires
+    if tires:
+        logo = open_image(f'images/car_parts/tires/logos/{tires}.png')
+        logo.thumbnail((80, 80))
+        margin = 45
+        background.alpha_composite(logo, (background.width - margin - logo.width,
+                                          background.height - margin - logo.height))
+
     return background
 
-# generate_card_picture1(1005532278, 6).show()
+# generate_card_picture(1005532278, 6, True, 'soft').show()
 # generate_card_picture1(1005532278, 1).show()
