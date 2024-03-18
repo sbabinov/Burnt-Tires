@@ -1,18 +1,18 @@
 import asyncio
 import random
-from typing import Dict
+from typing import Dict, Tuple
 
 from aiogram.types import CallbackQuery
 
-from loader import dp, db, bot
+from loader import dp, bot
 from ..modes import CircuitRace
 from handlers.common.loading import loading, loading_messages
 from image_generation import get_image
-from image_generation.game_modes.circuit_race import *
+from image_generation.game_modes.circuit_race.preparation import *
 from image_generation.cars import generate_card_picture
 from localisation.localisation import LANGUAGES, translate, translate_date
 from object_data import WEATHER, ALLOWED_MONTHS, ALLOWED_HOURS, ALLOWED_MINUTES, \
-    DAYS_IN_MONTH, HINTS, TIRES_EMOJI, get_tires_by_index
+    DAYS_IN_MONTH, HINTS, TIRES_EMOJI, get_tires_by_index, CIRCUITS
 from annotations import Language
 from keyboards.game_modes import GameConfirmationKeyboard
 from keyboards.game_modes.circuit_race import CircuitRaceKeyboard
@@ -93,11 +93,11 @@ async def select_circuit(race: CircuitRace) -> None:
     """ Race circuit voting. """
     players = race.players
     circuits = []
-    all_circuits = db.table('Circuits').select('id').all()
+    all_circuits = list(CIRCUITS.keys())
     for _ in range(2):
-        circuit = random.choice(all_circuits)[0]
+        circuit = random.choice(all_circuits)
         circuits.append(circuit)
-        all_circuits.remove((circuit,))
+        all_circuits.remove(circuit)
     images = {lang: await get_image(generate_circuit_choice_image, lang, circuits)
               for lang in set(race.langs.values())}
     keyboards = {pl_id: {False: CircuitRaceKeyboard.voting_menu(pl_id, *circuits),
@@ -133,7 +133,7 @@ async def select_circuit(race: CircuitRace) -> None:
     else:
         circuit = random.choice(circuits)
     clear_data()
-    race.circuit = circuit
+    race.circuit = CIRCUITS[circuit]
 
 
 def get_race_data() -> Tuple[Dict[Language, str], str, int]:

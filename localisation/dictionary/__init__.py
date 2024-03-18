@@ -6,7 +6,8 @@ modules = [
     '.date',
     '.hints',
     '.cars.car_parts',
-    '.cars.characteristics'
+    '.cars.characteristics',
+    '.race.circuits'
 ]
 
 DICTIONARY = dict()
