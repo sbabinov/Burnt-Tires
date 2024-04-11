@@ -14,12 +14,11 @@ PROGRESS_COLORS = {
 class TrackElement:
     id = None
     name = None
-    path = os.path.join(f'images/circuits/turns/')
 
-    def __init__(self, difficulty: str, pos_x: int, pos_y: int, start: bool = False) -> None:
+    def __init__(self, difficulty: str, pos_x: int, pos_y: int, next_lap: bool = False) -> None:
         self.difficulty = 'difficulty: ' + difficulty
         self.tag_pos = (pos_x, pos_y)
-        self.start = start
+        self.next_lap = next_lap
         self.status = None
         self.tag = False
 
@@ -72,15 +71,16 @@ class Shikana(TrackElement):
 # ------------------------ RACE CIRCUITS ------------------------ #
 
 class Circuit:
-    def __init__(self, name: str, route: List[TrackElement]) -> None:
+    def __init__(self, name: str, country: str, route: List[TrackElement]) -> None:
         self.name = name
+        self.country = country
         self.route = route
 
 
 class Monza(Circuit):
     def __init__(self):
-        super().__init__('Monza', [
-            LongStraight('easy', 1645, 1205, start=True),
+        super().__init__('Monza', 'Italy', [
+            LongStraight('easy', 1645, 1205, next_lap=True),
             Shikana('hard', 890, 1160),
             LongTurn('easy', 345, 1090),
             Straight('easy', 215, 680),
@@ -96,7 +96,8 @@ class Monza(Circuit):
 
 
 CIRCUITS = {
-    'monza': Monza
+    'monza': Monza,
+    'silverstone': Monza
 }
 
 ELEMENT_EMOJI = {

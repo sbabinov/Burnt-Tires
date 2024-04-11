@@ -7,7 +7,8 @@ modules = [
     '.hints',
     '.cars.car_parts',
     '.cars.characteristics',
-    '.race.circuits'
+    '.race.circuits',
+    '.race.common'
 ]
 
 DICTIONARY = dict()

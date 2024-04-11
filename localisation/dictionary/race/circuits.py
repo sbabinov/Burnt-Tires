@@ -1,7 +1,7 @@
 DICT = {
     "tr_el: straight": ["Прямая",
                         "Straight"],
-    "tr_el: long straight": ["Длинная Прямая",
+    "tr_el: long straight": ["Длинная прямая",
                              "Long straight"],
     "tr_el: shikana": ["Шикана",
                        "Shikana"],
@@ -11,4 +11,12 @@ DICT = {
                           "Sharp turn"],
     "tr_el: long turn": ["Затяжной поворот",
                          "Long turn"],
+    "tr_el: in": ["Вход",
+                  "In-corner"],
+    "tr_el: cornering": ["Прохождение",
+                         "Cornering"],
+    "tr_el: out": ["Выход",
+                   "Out-corner"],
+    "el_res: perfect": ["Идеально",
+                        "Perfect"]
 }

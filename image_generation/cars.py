@@ -7,7 +7,8 @@ from .common import get_fonts, open_image, recolor, get_rating_color
 from object_data import CAR_BRANDS, BRAND_COUNTRIES, get_car_rating
 
 
-def generate_card_picture(user_id: int, car_id: int, backside: bool = False, tires: str = None) -> Image:
+def generate_card_picture(user_id: int, car_id: int, backside: bool = False,
+                          tires: str = None, **kwargs) -> Image:
     # info from database
     brand_id, model, power, body = \
         db.table('Cars').get('brand', 'model', 'power', 'body_icon').where(id=car_id)
@@ -16,7 +17,11 @@ def generate_card_picture(user_id: int, car_id: int, backside: bool = False, tir
     # fonts
     model_font, brand_font = get_fonts('belligerent.ttf', 80, 40)
     description_font = get_fonts('blogger_sans.ttf', 30)
-    power_font, rating_font, rating_caption_font = get_fonts('blogger_sans_bold.ttf', 30, 55, 30)
+    power_font = get_fonts('blogger_sans_bold.ttf', 30)
+    if kwargs.get('big_characteristic_font'):
+        rating_font, rating_caption_font = get_fonts('blogger_sans_bold.ttf', 95, 55)
+    else:
+        rating_font, rating_caption_font = get_fonts('blogger_sans_bold.ttf', 55, 30)
 
     # background
     background = open_image(f'images/design/cars/cards/3.jpg')
@@ -87,11 +92,15 @@ def generate_card_picture(user_id: int, car_id: int, backside: bool = False, tir
     car_image.thumbnail((550, 350))
     pos_x = (background.width - car_image.width) // 2
     pos_y = background.height - 120 - car_image.height
-    background.alpha_composite(car_image, (pos_x, pos_y))
+    if not kwargs.get('without_image'):
+        background.alpha_composite(car_image, (pos_x, pos_y))
 
     # characteristics
     center_y = power_str_pos_y + 10 + (pos_y - power_str_pos_y - 10) // 2
-    margin_x = 110
+    if kwargs.get('big_characteristic_font'):
+        margin_x = 160
+    else:
+        margin_x = 110
     margin_y = 10
     text_height = idraw.textsize(str(rating['speed']), rating_font)[1] + \
         idraw.textsize('SPD', rating_caption_font)[1]
@@ -131,5 +140,5 @@ def generate_card_picture(user_id: int, car_id: int, backside: bool = False, tir
 
     return background
 
-# generate_card_picture(1005532278, 6, True, 'soft').show()
+#generate_card_picture(1005532278, 6, True, 'soft', big_characteristic_font=True).show()
 # generate_card_picture1(1005532278, 1).show()
