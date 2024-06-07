@@ -1,6 +1,7 @@
 import asyncio
 import random
 from typing import Dict, Tuple
+from copy import deepcopy
 
 from aiogram.types import CallbackQuery
 
@@ -17,7 +18,6 @@ from annotations import Language
 from keyboards.game_modes import GameConfirmationKeyboard
 from keyboards.game_modes.circuit_race import CircuitRaceKeyboard
 from ..modes import active_players
-
 
 voting = dict()
 
@@ -64,24 +64,24 @@ async def show_players(race: CircuitRace) -> None:
     for player in players:
         await loading(player, frames=loading_messages['default'])
 
-    images = {lang: [] for lang in LANGUAGES}
+    images = {player: [] for player in players}
     n_pages = len(players) // 2 + len(players) % 2
     for page in range(n_pages):
-        for lang in set(race.langs.values()):
-            image = await get_image(generate_race_members_image, lang, players, page)
-            images[lang].append(image)
+        for player in players:
+            image = await get_image(generate_race_members_image, race.langs[player], players, page)
+            images[player].append(image)
 
     for player in players:
         await loading(player, end=True)
 
     for player in players:
-        image = images[race.langs[player]][0]
+        image = images[player][0]
         await race.send_photo('players', player, image)
     await asyncio.sleep(5)
 
     for page in range(1, n_pages):
         for player in players:
-            image = images[race.langs[player]][page]
+            image = images[player][page]
             await race.edit_media('players', player, image)
         await asyncio.sleep(5)
 
@@ -98,8 +98,8 @@ async def select_circuit(race: CircuitRace) -> None:
         circuit = random.choice(all_circuits)
         circuits.append(circuit)
         all_circuits.remove(circuit)
-    images = {lang: await get_image(generate_circuit_choice_image, lang, circuits)
-              for lang in set(race.langs.values())}
+    images = {player: await get_image(generate_circuit_choice_image, race.langs[player],
+                                      [CIRCUITS[c]() for c in circuits]) for player in players}
     keyboards = {pl_id: {False: CircuitRaceKeyboard.voting_menu(pl_id, *circuits),
                          True: GameConfirmationKeyboard.waiting_menu(pl_id)} for pl_id in players}
 
@@ -110,7 +110,7 @@ async def select_circuit(race: CircuitRace) -> None:
     for player in players:
         voting[player] = None
         keyboard = keyboards[player][0]
-        await race.send_photo('circuit_voting', player, images[race.langs[player]],
+        await race.send_photo('circuit_voting', player, images[player],
                               keyboard=keyboard)
     timeout = 10
     while (not all([voting[pl] for pl in players])) and timeout:
@@ -133,7 +133,7 @@ async def select_circuit(race: CircuitRace) -> None:
     else:
         circuit = random.choice(circuits)
     clear_data()
-    race.circuit = CIRCUITS[circuit]
+    race.circuit = CIRCUITS[circuit]()
 
 
 def get_race_data() -> Tuple[Dict[Language, str], str, int]:
@@ -161,15 +161,15 @@ async def show_race_info(race: CircuitRace) -> None:
 
     for player in players:
         await loading(player, frames=loading_messages['preparing_for_race'])
-    for language in race.langs.values():
-        hint = translate(f'hint_{random.randint(1, HINTS)}', language=language)
-        images[language] = await get_image(generate_race_info_image, race.circuit,
-                                           date[language], time, weather, hint)
-    await asyncio.sleep(4)
+    for player in players:
+        hint = translate(f'hint_{random.randint(1, HINTS)}', player)
+        images[player] = await get_image(generate_race_info_image, race.circuit,
+                                         date[race.langs[player]], time, weather, hint)
+    # await asyncio.sleep(4)
     for player in players:
         await loading(player, end=True)
     for player in players:
-        await race.send_photo('race_info', player, images[race.langs[player]])
+        await race.send_photo('race_info', player, images[player])
     await asyncio.sleep(10)
     for player in players:
         await race.delete_message('race_info', player)
@@ -218,13 +218,13 @@ async def generate_cards(race: CircuitRace) -> None:
         await loading(player, end=True)
 
 
-@dp.callback_query_handler(text_contains='select-circuit_')
+@dp.callback_query_handler(text_contains='sel-circ_')
 async def player_select_circuit(call: CallbackQuery):
     user_id = call.from_user.id
     message_id = call.message.message_id
-    circuit_id = int(call.data.split('_')[1])
+    circuit = call.data.split('_')[1]
     if voting[user_id] is None:
-        voting[user_id] = circuit_id
+        voting[user_id] = circuit
         keyboard = GameConfirmationKeyboard.waiting_menu(user_id)
         await bot.edit_message_reply_markup(user_id, message_id, reply_markup=keyboard)
 

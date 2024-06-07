@@ -1,6 +1,6 @@
 import asyncio
 from io import BytesIO
-from typing import List, Dict, Literal, Tuple, Generator
+from typing import List, Dict, Literal, Tuple, Generator, Any
 
 from aiogram.types import InputMedia
 from aiogram.types import InlineKeyboardMarkup as Keyboard
@@ -8,7 +8,7 @@ from aiogram.utils.exceptions import MessageNotModified
 
 from loader import bot, db
 from localisation.localisation import translate
-from object_data import TIRES
+from object_data import Circuit
 
 
 class Race:
@@ -57,6 +57,10 @@ class Race:
         media = InputMedia(media=media)
         await bot.edit_message_media(media, player, message_id, reply_markup=keyboard)
 
+    async def edit_keyboard(self, name: str, player: int, keyboard: Keyboard = None) -> None:
+        message_id = self.messages[player][name]
+        await bot.edit_message_reply_markup(player, message_id, reply_markup=keyboard)
+
     async def delete_message(self, name: str, player: int) -> None:
         message_id = self.messages[player][name]
         await bot.delete_message(player, message_id)
@@ -87,16 +91,18 @@ class Race:
 class CircuitRace(Race):
     def __init__(self, players: List[int]) -> None:
         super().__init__(players)
-        self.circuit: int | None = None
+        self.circuit: Circuit | None = None
         self.weather: int | None = None
-        self.player_score: int | None = None
+        self.score: Dict[int, int] | None = None
         self.usernames: Dict[int, str] | None = None
         self.decks: Dict[int, List[int]] = dict()
         self.cards: Dict[Tuple[int, int], BytesIO] = dict()
         self.ready_players: List[int] = []
         self.tires: Dict[int, Dict[int, List[str, float] | None]] = dict()
+        self.other_data: Any = None
         for player in self.players:
             active_players[player] = self
+            self.score[player] = 0
 
     def get_cars(self, user_id: int) -> Generator:
         for car_id in self.decks[user_id]:

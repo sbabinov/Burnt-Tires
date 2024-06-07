@@ -5,7 +5,6 @@ from aiogram.types import Message
 
 from loader import dp
 from .game_modes import GAME_MODES
-from .confirmation import confirm_game
 
 
 WAITING_TIME = 1
