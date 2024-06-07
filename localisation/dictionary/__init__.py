@@ -2,6 +2,7 @@ import importlib
 from .dictionary import *
 
 modules = [
+    '.common',
     '.dictionary',
     '.date',
     '.hints',

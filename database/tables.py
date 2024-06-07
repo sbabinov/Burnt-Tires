@@ -21,7 +21,7 @@ class Cars(Table):
     fuel_volume = INT()
     fuel_consumption = REAL()
     weight = REAL()
-    drive_unit_type = TEXT()
+    drive_type = TEXT()
     handling = INT()
     passability = INT()
     trunk_volume = INT()

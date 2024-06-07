@@ -11,7 +11,8 @@ def generate_image(function: Callable, args: Collection) -> Image:
     return image
 
 
-async def get_image(function: Callable, *args, proc_pool: bool = True, save_to: str | None = None) -> BytesIO:
+async def get_image(function: Callable, *args, proc_pool: bool = True,
+                    save_to: str | None = None) -> BytesIO:
     pool = proccess_pool if proc_pool else thread_pool
     image = await loop.run_in_executor(pool, generate_image, function, args)
     image = image.convert(mode='RGB')
@@ -25,6 +26,5 @@ async def get_image(function: Callable, *args, proc_pool: bool = True, save_to: 
         return bio
 
 
-def copy_image(image):
-    image_copy = Image.open(image)
-    return image_copy
+def copy_image(image: BytesIO) -> Image.Image:
+    return Image.open(image)
