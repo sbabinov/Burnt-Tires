@@ -93,7 +93,8 @@ class CircuitRace(Race):
         super().__init__(players)
         self.circuit: Circuit | None = None
         self.weather: int | None = None
-        self.score: Dict[int, int] | None = None
+        self.score: Dict[int, int] = dict()
+        self.penalties: Dict[int, int] = dict()
         self.usernames: Dict[int, str] | None = None
         self.decks: Dict[int, List[int]] = dict()
         self.cards: Dict[Tuple[int, int], BytesIO] = dict()
@@ -103,6 +104,7 @@ class CircuitRace(Race):
         for player in self.players:
             active_players[player] = self
             self.score[player] = 0
+            self.penalties[player] = 0
 
     def get_cars(self, user_id: int) -> Generator:
         for car_id in self.decks[user_id]:

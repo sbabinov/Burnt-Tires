@@ -25,12 +25,14 @@ async def start(race: CircuitRace) -> None:
     for n in range(1, n_lights + 1):
         for player in players:
             keyboard = CircuitRaceKeyboard.start_race_menu(player, n)
-            await race.edit_keyboard('start', player, keyboard)
+            if not race.penalties[player]:
+                await race.edit_keyboard('start', player, keyboard)
         await asyncio.sleep(1.5)
     await asyncio.sleep(random.choice([n / 10 for n in range(7, 15)]))
     for player in players:
         keyboard = CircuitRaceKeyboard.start_race_menu(player, 0)
-        await race.edit_keyboard('start', player, keyboard)
+        if not race.penalties[player]:
+            await race.edit_keyboard('start', player, keyboard)
         race.other_data[player] = time.time()
 
 
@@ -39,9 +41,14 @@ async def player_select_circuit(call: CallbackQuery):
     await call.answer()
     user_id = call.from_user.id
     race = active_players[user_id]
-    if not race.other_data.get(user_id):
+    if (race.score[user_id] != 0) and (race.penalties[user_id] == 0):
         return
+    if (race.score[user_id] == 0) and (not race.other_data.get(user_id)):
+        race.penalties[user_id] += 50
+        await race.delete_message('start', user_id)
+        return await race.send_message('race_start_result', user_id, 'False start!')
     diff = time.time() - race.other_data[user_id]
+    await race.delete_message('start', user_id)
     if diff < 0.5:
         race.score[user_id] += 50
         await race.send_message('race_start_result', user_id, 'Perfect!')
@@ -51,5 +58,4 @@ async def player_select_circuit(call: CallbackQuery):
     else:
         race.score[user_id] += 10
         await race.send_message('race_start_result', user_id, 'Not bad!')
-    await race.delete_message('start', user_id)
-    del race.other_data[user_id]
+    del race.score[user_id]
