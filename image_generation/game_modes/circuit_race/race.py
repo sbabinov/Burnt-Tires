@@ -238,7 +238,7 @@ def generate_move_results_image(user_id: int, car_id: int, tires: str,
     return background
 
 
-def generate_score_table_image(user_id: int, score_data: Dict[int, int]) -> Image.Image:
+def generate_scoreboard_image(user_id: int, score_data: Dict[int, int]) -> Image.Image:
     title_font, position_font, username_font = get_fonts('blogger_sans_bold.ttf', 60, 45, 40)
     score_font = get_fonts('blogger_sans_bold.ttf', 50)
 

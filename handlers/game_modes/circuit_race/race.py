@@ -21,6 +21,8 @@ async def start(race: CircuitRace) -> None:
         images[player] = await get_image(generate_track_element_image, race.langs[player], race.circuit, 0)
     for player in players:
         menu = CircuitRaceKeyboard.start_race_menu(player, 0)
+        scoreboard = await get_image(generate_scoreboard_image, player, race.score)
+        await race.send_photo('scoreboard', player, scoreboard)
         await race.send_photo('start', player, images[player], keyboard=menu)
     n_lights = 5
     for n in range(1, n_lights + 1):
