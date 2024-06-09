@@ -193,7 +193,12 @@ def generate_move_results_image(user_id: int, car_id: int, tires: str,
     pos_y = 270
     idraw.rectangle((pos_x, pos_y, pos_x + 2, pos_y + 160), 'white')
 
-    captions = [translate(kws, user_id) for kws in ('tr_el: in', 'tr_el: cornering', 'tr_el: out')]
+    margin_y = 50
+    if element.id in (1, 4, 5):
+        captions = [translate('tr_el: passing', user_id)]
+        pos_y += margin_y
+    else:
+        captions = [translate(kws, user_id) for kws in ('tr_el: in', 'tr_el: cornering', 'tr_el: out')]
     captions_data = {
         (0, 0): ...,
         (1, 25): ...,
@@ -205,7 +210,6 @@ def generate_move_results_image(user_id: int, car_id: int, tires: str,
     }
     pos_x += 20
     pos_y += 15
-    margin_y = 50
     for i in range(len(captions)):
         caption = f'{captions[i]}: '
         text_width = idraw.textsize(caption, results_font)[0]
@@ -217,6 +221,9 @@ def generate_move_results_image(user_id: int, car_id: int, tires: str,
         idraw.text((pos_x, pos_y), f'{captions[i]}:', 'white', results_font)
         idraw.text((pos_x + text_width, pos_y), translate(result, user_id).lower(), color, results_font)
 
+        pos_y += margin_y
+
+    if element.id in (1, 4, 5):
         pos_y += margin_y
 
     # score

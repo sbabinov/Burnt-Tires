@@ -17,6 +17,8 @@ DICT = {
                          "Cornering"],
     "tr_el: out": ["Выход",
                    "Out-corner"],
+    "tr_el: passing": ["Прохождение",
+                       "Passing"],
     "el_res: perfect": ["Идеально",
                         "Perfect"]
 }
