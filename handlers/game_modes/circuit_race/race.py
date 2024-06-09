@@ -12,6 +12,12 @@ from keyboards.game_modes.circuit_race import CircuitRaceKeyboard
 from handlers.common.loading import loading, loading_messages
 
 
+async def update_scoreboard(race: CircuitRace) -> None:
+    for player in race.players:
+        scoreboard = await get_image(generate_scoreboard_image, player, race.score)
+        await race.edit_media('scoreboard', player, scoreboard)
+
+
 async def start(race: CircuitRace) -> None:
     players = race.players
     race.circuit.route[0].tag = True
@@ -43,6 +49,7 @@ async def start(race: CircuitRace) -> None:
         await asyncio.sleep(1)
     for player in players:
         await loading(player, end=True)
+    await update_scoreboard(race)
 
 
 @dp.callback_query_handler(text_contains='race_start')
