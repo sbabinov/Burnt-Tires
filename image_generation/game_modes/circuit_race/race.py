@@ -283,7 +283,7 @@ def generate_scoreboard_image(user_id: int, score_data: Dict[int, int]) -> Image
     max_score_len = idraw.textsize(f'{max(score_data.values())} pts', score_font)[0]
     score_pos_x = row_pos_x + row_width + score_width - (score_width - max_score_len) // 2
     position = 1
-    for player_id, score in sorted(score_data.items(), key=lambda x: x[1]):
+    for player_id, score in sorted(score_data.items(), key=lambda x: x[1], reverse=True):
         pos = (row_pos_x + row_width, row_pos_y,
                row_pos_x + row_width + line_width, row_pos_y + row_height)
         idraw.rectangle(pos, 'white')

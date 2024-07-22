@@ -1,6 +1,6 @@
 import asyncio
 from io import BytesIO
-from typing import List, Dict, Literal, Tuple, Generator, Any
+from typing import List, Dict, Literal, Generator, Any
 
 from aiogram.types import InputMedia
 from aiogram.types import InlineKeyboardMarkup as Keyboard

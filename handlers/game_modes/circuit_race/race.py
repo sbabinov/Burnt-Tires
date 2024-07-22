@@ -8,7 +8,7 @@ from aiogram.types import CallbackQuery
 
 from loader import dp
 from ..modes import CircuitRace, active_players
-from image_generation import get_image, copy_image
+from image_generation import get_image
 from image_generation.game_modes.circuit_race.race import *
 from keyboards.game_modes.circuit_race import CircuitRaceKeyboard
 from handlers.common.loading import loading, loading_messages
@@ -17,8 +17,6 @@ from handlers.common.loading import loading, loading_messages
 async def select_cards(race: CircuitRace) -> None:
     for player in race.players:
         car_id = race.deck_states[player].allowed_cars[0]
-        tires = race.tires[player][car_id][0]
-        # card = await get_image(generate_card_picture, player, car_id, False, tires)
         card = copy.deepcopy(race.cards[player][car_id])
         keyboard = CircuitRaceKeyboard.card_selection_menu(player)
         await race.send_photo('cards', player, card, keyboard=keyboard)
@@ -122,7 +120,5 @@ async def player_select_card(call: CallbackQuery):
         await call.message.delete()
         return
 
-    # card = copy_image(race.cards[user_id][deck_state.allowed_cars[deck_state.selected_car_index]])
     card = deepcopy(race.cards[user_id][deck_state.allowed_cars[deck_state.selected_car_index]])
     await race.edit_media('cards', user_id, card, call.message.reply_markup)
-
