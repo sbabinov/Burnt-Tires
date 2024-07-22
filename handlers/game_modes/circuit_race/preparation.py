@@ -1,7 +1,6 @@
 import asyncio
 import random
 from typing import Dict, Tuple
-from copy import deepcopy
 
 from aiogram.types import CallbackQuery
 
@@ -17,10 +16,9 @@ from object_data import WEATHER, ALLOWED_MONTHS, ALLOWED_HOURS, ALLOWED_MINUTES,
 from annotations import Language
 from keyboards.game_modes import GameConfirmationKeyboard
 from keyboards.game_modes.circuit_race import CircuitRaceKeyboard
-from ..modes import active_players
+from ..modes import active_players, DeckState
 
 voting = dict()
-
 
 def get_tires_caption(user_id: int, tires: str, amount: int) -> str:
     language = db.table('Users').get('language').where(id=user_id)
@@ -185,11 +183,14 @@ async def select_tires(race: CircuitRace) -> None:
     for player in players:
         images[player] = dict()
         race.decks[player] = list()
+        race.deck_states[player] = DeckState()
+        race.deck_states[player].allowed_cars = race.decks[player].copy()
         race.tires[player] = dict()
         for car_id in db.table('UserDecks').get('race_deck').where(user_id=player).to_int():
             images[player][car_id] = await get_image(generate_tires_for_race_choice_window, car_id)
             race.decks[player].append(car_id)
             race.tires[player][car_id] = None
+            race.deck_states[player].allowed_cars.append(car_id)
     for player in players:
         await loading(player, end=True)
 
@@ -213,7 +214,7 @@ async def generate_cards(race: CircuitRace) -> None:
         for car_id in race.decks[player]:
             tires = race.tires[player][car_id][0]
             card = await get_image(generate_card_picture, player, car_id, False, tires)
-            race.cards[(player, car_id)] = card
+            race.cards[player][car_id] = card
     for player in race.players:
         await loading(player, end=True)
 

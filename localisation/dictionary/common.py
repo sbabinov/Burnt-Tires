@@ -1,4 +1,6 @@
 DICT = {
     "state": ["Состояние",
-              "State"]
+              "State"],
+    "flip": ["Повернуть",
+             "Flip"]
 }

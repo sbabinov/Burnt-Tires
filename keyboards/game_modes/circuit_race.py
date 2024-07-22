@@ -45,3 +45,18 @@ class CircuitRaceKeyboard:
             ]
         ]
         return InlineKeyboardMarkup(row_width=2, inline_keyboard=menu)
+
+    @staticmethod
+    def card_selection_menu(user_id: int) -> InlineKeyboardMarkup:
+        menu = [
+            [
+                InlineKeyboardButton(text="⬅️", callback_data=f"race-select-card_left"),
+                InlineKeyboardButton(text=f"✅", callback_data=f"race-select-card_push"),
+                InlineKeyboardButton(text="➡️", callback_data=f"race-select-card_right")
+            ],
+            [
+                InlineKeyboardButton(text=f"↩️ {translate('flip', user_id)}",
+                                     callback_data=f"race-select-card_flip"),
+            ]
+        ]
+        return InlineKeyboardMarkup(row_width=2, inline_keyboard=menu)

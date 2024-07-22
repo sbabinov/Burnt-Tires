@@ -1,15 +1,31 @@
+import copy
 import time
 import asyncio
 import random
+from copy import deepcopy
 
 from aiogram.types import CallbackQuery
 
 from loader import dp
 from ..modes import CircuitRace, active_players
-from image_generation import get_image
+from image_generation import get_image, copy_image
 from image_generation.game_modes.circuit_race.race import *
 from keyboards.game_modes.circuit_race import CircuitRaceKeyboard
 from handlers.common.loading import loading, loading_messages
+
+
+async def select_cards(race: CircuitRace) -> None:
+    for player in race.players:
+        car_id = race.deck_states[player].allowed_cars[0]
+        tires = race.tires[player][car_id][0]
+        # card = await get_image(generate_card_picture, player, car_id, False, tires)
+        card = copy.deepcopy(race.cards[player][car_id])
+        keyboard = CircuitRaceKeyboard.card_selection_menu(player)
+        await race.send_photo('cards', player, card, keyboard=keyboard)
+    await asyncio.sleep(15)
+    for player in race.players:
+        if not race.deck_states[player].is_selected:
+            await race.delete_message('cards', player)
 
 
 async def update_scoreboard(race: CircuitRace) -> None:
@@ -30,6 +46,8 @@ async def start(race: CircuitRace) -> None:
         scoreboard = await get_image(generate_scoreboard_image, player, race.score)
         await race.send_photo('scoreboard', player, scoreboard)
         await race.send_photo('start', player, images[player], keyboard=menu)
+    await select_cards(race)
+
     n_lights = 5
     for n in range(1, n_lights + 1):
         for player in players:
@@ -79,3 +97,32 @@ async def player_select_circuit(call: CallbackQuery):
         await race.send_message('race_start_result', user_id, 'Not bad!')
     del race.other_data[user_id]
     await loading(user_id, frames=loading_messages['clock'])
+
+
+@dp.callback_query_handler(text_contains='race-select-card_')
+async def player_select_card(call: CallbackQuery):
+    await call.answer()
+    user_id = call.from_user.id
+    race = active_players[user_id]
+    deck_state = race.deck_states[user_id]
+    action = call.data.split('_')[1]
+    if (action == 'right') and (not deck_state.is_selected):
+        deck_state.selected_car_index += 1
+        if deck_state.selected_car_index >= len(deck_state.allowed_cars):
+            deck_state.selected_car_index = 0
+    elif (action == 'left') and (not deck_state.is_selected):
+        deck_state.selected_car_index -= 1
+        if deck_state.selected_car_index < 0:
+            deck_state.selected_car_index = len(deck_state.allowed_cars) - 1
+    elif action == 'flip':
+        ...
+    else:
+        deck_state.is_selected = True
+        deck_state.allowed_cars.pop(deck_state.selected_car_index)
+        await call.message.delete()
+        return
+
+    # card = copy_image(race.cards[user_id][deck_state.allowed_cars[deck_state.selected_car_index]])
+    card = deepcopy(race.cards[user_id][deck_state.allowed_cars[deck_state.selected_car_index]])
+    await race.edit_media('cards', user_id, card, call.message.reply_markup)
+

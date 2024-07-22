@@ -87,6 +87,13 @@ class Race:
     async def start(self) -> None:
         raise NotImplementedError
 
+# ------ Circuit race ------
+
+class DeckState:
+    allowed_cars: List[int] = list()
+    selected_car_index: int = 0
+    is_flipped: bool = False
+    is_selected: bool = False
 
 class CircuitRace(Race):
     def __init__(self, players: List[int]) -> None:
@@ -97,7 +104,8 @@ class CircuitRace(Race):
         self.penalties: Dict[int, int] = dict()
         self.usernames: Dict[int, str] | None = None
         self.decks: Dict[int, List[int]] = dict()
-        self.cards: Dict[Tuple[int, int], BytesIO] = dict()
+        self.cards: Dict[int, Dict[int, BytesIO]] = dict()
+        self.deck_states: Dict[int, DeckState] = dict()
         self.ready_players: List[int] = []
         self.tires: Dict[int, Dict[int, List[str, float] | None]] = dict()
         self.other_data: Any = None
@@ -105,6 +113,7 @@ class CircuitRace(Race):
             active_players[player] = self
             self.score[player] = 0
             self.penalties[player] = 0
+            self.cards[player] = dict()
 
     def get_cars(self, user_id: int) -> Generator:
         for car_id in self.decks[user_id]:
