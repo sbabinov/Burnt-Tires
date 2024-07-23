@@ -100,7 +100,7 @@ class CircuitRace(Race):
         super().__init__(players)
         self.circuit: Circuit | None = None
         self.weather: int | None = None
-        self.score: Dict[int, int] = dict()
+        self.score: Dict[int, List[int, int]] = dict()
         self.penalties: Dict[int, int] = dict()
         self.usernames: Dict[int, str] | None = None
         self.decks: Dict[int, List[int]] = dict()
@@ -111,7 +111,7 @@ class CircuitRace(Race):
         self.other_data: Any = None
         for player in self.players:
             active_players[player] = self
-            self.score[player] = 0
+            self.score[player] = [0, 0]
             self.penalties[player] = 0
             self.cards[player] = dict()
 

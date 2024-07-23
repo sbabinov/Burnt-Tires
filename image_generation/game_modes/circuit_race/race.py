@@ -120,8 +120,8 @@ def generate_track_element_image(language: Language, circuit: Circuit, element_i
     return background
 
 
-def generate_move_results_image(user_id: int, car_id: int, tires: str,
-                                element: TrackElement, results, score) -> Image.Image:
+def generate_move_results_image(player_id: int, user_id: int, car_id: int, tires: str,
+                                element: TrackElement, results, score: int) -> Image.Image:
     username_font, element_font, score_font = get_fonts('blogger_sans_bold.ttf', 50, 40, 45)
     results_font = get_fonts('blogger_sans.ttf', 40)
     rank_font = get_fonts('capture_it.ttf', 100)
@@ -159,7 +159,7 @@ def generate_move_results_image(user_id: int, car_id: int, tires: str,
               background.height // 2)
 
     # username
-    username = db.table('Users').get('username').where(id=user_id)
+    username = db.table('Users').get('username').where(id=player_id)
     pos_y = 50
     idraw.text((center[0], pos_y), username, 'white', username_font, anchor='ma')
 
