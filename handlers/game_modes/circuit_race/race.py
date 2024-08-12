@@ -17,17 +17,30 @@ from object_data.common import DICE_STICKERS
 
 
 async def select_cards(race: CircuitRace) -> None:
+    is_last = len(race.deck_states[race.players[0]].allowed_cars) == 1
     for player in race.players:
         car_id = race.deck_states[player].allowed_cars[0]
         card = copy.deepcopy(race.cards[player][car_id])
-        keyboard = CircuitRaceKeyboard.card_selection_menu(player)
+        if not is_last:
+            keyboard = CircuitRaceKeyboard.card_selection_menu(player)
+        else:
+            keyboard = None
         await race.send_photo('cards', player, card, keyboard=keyboard)
-    await asyncio.sleep(15)
+    if is_last:
+        await asyncio.sleep(4)
+        for player in race.players:
+            await race.delete_message('cards', player)
+        return
+    for i in range(15):
+        if all(race.deck_states[player].is_selected for player in race.players):
+            break
+        await asyncio.sleep(1)
     for player in race.players:
         if not race.deck_states[player].is_selected:
             await race.delete_message('cards', player)
         else:
             race.deck_states[player].is_selected = False
+        await loading(player, end=True)
 
 
 async def update_scoreboard(race: CircuitRace) -> None:
@@ -133,18 +146,21 @@ async def hold_race(race: CircuitRace) -> None:
         element.status = 'current'
         images = dict()
         for player in players:
+            await loading(player, loading_messages['default'])
+        for player in players:
             images[player] = await get_image(generate_track_element_image,
                                              race.langs[player], race.circuit, i, True)
         for player in players:
+            await loading(player, end=True)
             await race.send_photo('track_element', player, images[player])
         await select_cards(race)
         await roll_dices(race, player_dice)
         calculate_score(race)
+        for player in players:
+            await race.delete_message('track_element', player)
         await process_move_results(race, element)
         await update_scoreboard(race)
         element.tag = False
-        for player in players:
-            await race.delete_message('track_element', player)
         # for player in players:
         #     menu = CircuitRaceKeyboard.track_element_menu(race.current_point_states[player])
         #     await race.edit_keyboard('track_element', player, menu)
@@ -203,6 +219,7 @@ async def player_select_card(call: CallbackQuery):
     else:
         deck_state.is_selected = True
         await call.message.delete()
+        await loading(user_id, loading_messages['clock'])
         return
 
     card = deepcopy(race.cards[user_id][deck_state.allowed_cars[deck_state.selected_car_index]])
