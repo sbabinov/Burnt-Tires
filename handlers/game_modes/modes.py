@@ -13,6 +13,14 @@ from object_data import Circuit
 
 class Race:
     """ Base class for game modes. """
+    class Score:
+        total: int = 0
+        last: int = 0
+
+        def add(self, score) -> None:
+            self.total += score
+            self.last = score
+
     players: List[int] = []
     langs: Dict[int, Literal["RUS", "ENG"]]
     messages: Dict[int, Dict] = {}
@@ -41,6 +49,10 @@ class Race:
     async def send_photo(self, name: str, player: int, photo: BytesIO,
                          caption: str = None, keyboard: Keyboard = None) -> None:
         msg = await bot.send_photo(player, photo, caption, reply_markup=keyboard)
+        self.messages[player][name] = msg.message_id
+
+    async def send_sticker(self, name: str, player: int, sticker_id: str) -> None:
+        msg = await bot.send_sticker(player, sticker_id)
         self.messages[player][name] = msg.message_id
 
     async def edit_text(self, name: str, player: int, text: str,
@@ -100,7 +112,7 @@ class CircuitRace(Race):
         super().__init__(players)
         self.circuit: Circuit | None = None
         self.weather: int | None = None
-        self.score: Dict[int, List[int, int]] = dict()
+        self.score: Dict[int, Race.Score] = dict()
         self.penalties: Dict[int, int] = dict()
         self.usernames: Dict[int, str] | None = None
         self.decks: Dict[int, List[int]] = dict()
@@ -111,9 +123,10 @@ class CircuitRace(Race):
         self.other_data: Any = None
         for player in self.players:
             active_players[player] = self
-            self.score[player] = [0, 0]
+            self.score[player] = Race.Score()
             self.penalties[player] = 0
             self.cards[player] = dict()
+        self.current_point_states: Dict[int, List[int]] = dict()
 
     def get_cars(self, user_id: int) -> Generator:
         for car_id in self.decks[user_id]:

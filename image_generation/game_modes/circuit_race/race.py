@@ -61,7 +61,8 @@ def get_circuit_scheme(circuit: Circuit, raw: bool = True, element_index: int = 
     return background
 
 
-def generate_track_element_image(language: Language, circuit: Circuit, element_index: int) -> Image.Image:
+def generate_track_element_image(language: Language, circuit: Circuit,
+                                 element_index: int, show_progress: bool = False) -> Image.Image:
     name_font = get_fonts('blogger_sans_bold.ttf', 40)
     difficulty_font = get_fonts('blogger_sans.ttf', 30)
 
@@ -111,7 +112,10 @@ def generate_track_element_image(language: Language, circuit: Circuit, element_i
         pos_x = center_x - caption_width // 2
         idraw.text((pos_x, pos_y), caption, 'white', difficulty_font)
 
-    circuit_image = get_circuit_scheme(circuit, element_index=element_index)
+    if not show_progress:
+        circuit_image = get_circuit_scheme(circuit, element_index=element_index)
+    else:
+        circuit_image = get_circuit_scheme(circuit, False, None)
     circuit_image.thumbnail((530, 470))
     center_x = line_x // 2
     pos_y = (background.height - circuit_image.height) // 2

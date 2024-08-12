@@ -1,6 +1,9 @@
+from typing import List
+
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from localisation.localisation import translate
+from object_data.circuits import TrackElement
 
 
 class CircuitRaceKeyboard:
@@ -50,13 +53,30 @@ class CircuitRaceKeyboard:
     def card_selection_menu(user_id: int) -> InlineKeyboardMarkup:
         menu = [
             [
-                InlineKeyboardButton(text="⬅️", callback_data=f"race-select-card_left"),
-                InlineKeyboardButton(text=f"✅", callback_data=f"race-select-card_push"),
-                InlineKeyboardButton(text="➡️", callback_data=f"race-select-card_right")
+                InlineKeyboardButton(text="⬅️", callback_data="race-select-card_left"),
+                InlineKeyboardButton(text=f"✅", callback_data="race-select-card_push"),
+                InlineKeyboardButton(text="➡️", callback_data="race-select-card_right")
             ],
             [
                 InlineKeyboardButton(text=f"↩️ {translate('flip', user_id)}",
-                                     callback_data=f"race-select-card_flip"),
+                                     callback_data="race-select-card_flip"),
             ]
         ]
         return InlineKeyboardMarkup(row_width=2, inline_keyboard=menu)
+
+    @staticmethod
+    def track_element_menu(states: List[int] = None) -> InlineKeyboardMarkup:
+        key_points = []
+        for i in range(len(states)):
+            if states[i] == 0:
+                text = '⚪️'
+            elif states[i] == 1:
+                text = '🔴'
+            elif states[i] == 2:
+                text = '🟠'
+            elif states[i] == 3:
+                text = '🟡'
+            else:
+                text = '🟢'
+            key_points.append(InlineKeyboardButton(text=text, callback_data=f"race-element-pt_{i}_{states[i]}"))
+        return InlineKeyboardMarkup(row_width=2, inline_keyboard=[key_points])

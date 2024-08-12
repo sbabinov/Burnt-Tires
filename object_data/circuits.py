@@ -1,5 +1,3 @@
-import os
-
 from typing import List
 
 
@@ -15,8 +13,10 @@ class TrackElement:
     id = None
     name = None
 
-    def __init__(self, difficulty: str, pos_x: int, pos_y: int, next_lap: bool = False) -> None:
+    def __init__(self, difficulty: str, key_points: int,
+                 pos_x: int, pos_y: int, next_lap: bool = False) -> None:
         self.difficulty = 'difficulty: ' + difficulty
+        self.key_points = key_points
         self.tag_pos = (pos_x, pos_y)
         self.next_lap = next_lap
         self.status = None
@@ -80,18 +80,18 @@ class Circuit:
 class Monza(Circuit):
     def __init__(self):
         super().__init__('Monza', 'Italy', [
-            LongStraight('easy', 1645, 1205, next_lap=True),
-            Shikana('hard', 890, 1160),
-            LongTurn('easy', 345, 1090),
-            Straight('easy', 215, 680),
-            Shikana('medium', 165, 475),
-            Straight('easy', 70, 285),
-            Turn('easy', 20, 130),
-            Turn('easy', 355, 25),
-            LongStraight('easy', 735, 500),
-            Shikana('medium', 1195, 840),
-            LongStraight('easy', 1815, 905),
-            LongTurn('medium', 2345, 1105)
+            LongStraight('easy', 0, 1645, 1205, next_lap=True),
+            Shikana('hard', 5, 890, 1160),
+            LongTurn('easy', 3, 345, 1090),
+            Straight('easy', 0, 215, 680),
+            Shikana('medium', 4, 165, 475),
+            Straight('easy', 0, 70, 285),
+            Turn('easy', 3, 20, 130),
+            Turn('easy', 3, 355, 25),
+            LongStraight('easy', 0, 735, 500),
+            Shikana('medium', 5, 1195, 840),
+            LongStraight('easy', 0, 1815, 905),
+            LongTurn('medium', 4, 2345, 1105)
         ])
 
 
