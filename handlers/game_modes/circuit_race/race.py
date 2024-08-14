@@ -37,6 +37,7 @@ async def select_cards(race: CircuitRace) -> None:
         await asyncio.sleep(1)
     for player in race.players:
         if not race.deck_states[player].is_selected:
+            race.deck_states[player].selected_car_index = 0
             await race.delete_message('cards', player)
         else:
             race.deck_states[player].is_selected = False
@@ -150,9 +151,10 @@ async def hold_race(race: CircuitRace) -> None:
         for player in players:
             images[player] = await get_image(generate_track_element_image,
                                              race.langs[player], race.circuit, i, True)
+        menu = CircuitRaceKeyboard.degree_of_aggression_menu(2)
         for player in players:
             await loading(player, end=True)
-            await race.send_photo('track_element', player, images[player])
+            await race.send_photo('track_element', player, images[player], keyboard=menu)
         await select_cards(race)
         await roll_dices(race, player_dice)
         calculate_score(race)
@@ -217,13 +219,24 @@ async def player_select_card(call: CallbackQuery):
     elif action == 'flip':
         ...
     else:
-        deck_state.is_selected = True
         await call.message.delete()
         await loading(user_id, loading_messages['clock'])
+        deck_state.is_selected = True
         return
 
     card = deepcopy(race.cards[user_id][deck_state.allowed_cars[deck_state.selected_car_index]])
     await race.edit_media('cards', user_id, card, call.message.reply_markup)
+
+
+@dp.callback_query_handler(text_contains='race-agression_')
+async def player_change_point(call: CallbackQuery):
+    await call.answer()
+    user_id = call.from_user.id
+    race = active_players[user_id]
+    state = int(call.data.split('_')[1])
+    race.agression_state[user_id] = state
+    menu = CircuitRaceKeyboard.degree_of_aggression_menu(state)
+    await race.edit_keyboard('track_element', user_id, menu)
 
 
 @dp.callback_query_handler(text_contains='race-element-pt_')

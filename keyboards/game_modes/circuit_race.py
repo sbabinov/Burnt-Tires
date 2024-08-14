@@ -65,6 +65,23 @@ class CircuitRaceKeyboard:
         return InlineKeyboardMarkup(row_width=2, inline_keyboard=menu)
 
     @staticmethod
+    def degree_of_aggression_menu(current_state: int) -> InlineKeyboardMarkup:
+        menu = []
+        emoji_dict = {
+            1: '🟢',
+            2: '🟡',
+            3: '🟠',
+            4: '🔴'
+        }
+        for i in range(1, 5):
+            if i == current_state:
+                emoji = '✅'
+            else:
+                emoji = emoji_dict[i]
+            menu.append(InlineKeyboardButton(text=emoji, callback_data=f"race-agression_{i}"))
+        return InlineKeyboardMarkup(row_width=2, inline_keyboard=[menu])
+
+    @staticmethod
     def track_element_menu(states: List[int] = None) -> InlineKeyboardMarkup:
         key_points = []
         for i in range(len(states)):

@@ -120,6 +120,7 @@ class CircuitRace(Race):
         self.deck_states: Dict[int, DeckState] = dict()
         self.ready_players: List[int] = []
         self.tires: Dict[int, Dict[int, List[str, float] | None]] = dict()
+        self.agression_state: Dict[int, int] = dict()
         self.other_data: Any = None
         for player in self.players:
             active_players[player] = self
