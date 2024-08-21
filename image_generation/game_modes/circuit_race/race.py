@@ -124,18 +124,154 @@ def generate_track_element_image(language: Language, circuit: Circuit,
     return background
 
 
-def generate_move_results_image(player_id: int, user_id: int, car_id: int, tires: str,
-                                element: TrackElement, results, score: int) -> Image.Image:
-    username_font, element_font, score_font = get_fonts('blogger_sans_bold.ttf', 50, 40, 45)
-    results_font = get_fonts('blogger_sans.ttf', 40)
-    rank_font = get_fonts('capture_it.ttf', 100)
+# def generate_move_results_image(player_id: int, user_id: int, car_id: int, tires: str,
+#                                 element: TrackElement, results, score: int) -> Image.Image:
+#     username_font, element_font, score_font = get_fonts('blogger_sans_bold.ttf', 50, 40, 45)
+#     results_font = get_fonts('blogger_sans.ttf', 40)
+#     rank_font = get_fonts('capture_it.ttf', 100)
+#
+#     background = open_image('images/design/modes/race_circuit/move_results.jpg')
+#     background.thumbnail((1000, 1000))
+#     idraw = ImageDraw.Draw(background)
+#
+#     # card
+#     # card = Image.open(card)
+#     card = generate_card_picture(1005532278, car_id, without_image=True, big_characteristic_font=True)
+#     card.thumbnail((330, 600))
+#     margin_x = 100
+#     pos_x = margin_x
+#     pos_y = background.height // 2 - card.height // 2
+#     background.alpha_composite(card, (pos_x, pos_y))
+#
+#     # tires
+#     tires_logo = open_image(f'images/car_parts/tires/logos/{tires}.png')
+#     tires_logo.thumbnail((60, 60))
+#     pos_x += card.width - tires_logo.width // 2 - 10
+#     pos_y -= tires_logo.height // 2 - 10
+#     background.alpha_composite(tires_logo, (pos_x, pos_y))
+#
+#     # car
+#     brand_id = db.table('Cars').get('brand').where(id=car_id)
+#     car_image = open_image(f'images/cars/{brand_id}/{car_id}.png')
+#     car_image.thumbnail((430, 250))
+#     center = (265, 450)
+#     pos_x = center[0] - car_image.width // 2
+#     pos_y = center[1] - car_image.height // 2
+#     background.alpha_composite(car_image, (pos_x, pos_y))
+#
+#     center = (background.width - (background.width - card.width - margin_x) // 2,
+#               background.height // 2)
+#
+#     # username
+#     username = db.table('Users').get('username').where(id=player_id)
+#     pos_y = 50
+#     idraw.text((center[0], pos_y), username, 'white', username_font, anchor='ma')
+#
+#     # circuit element
+#     element_image = open_image(f'images/circuits/turns/{element.id}.png')
+#     element_image.thumbnail((100, 100))
+#     element_name = translate(element.name, user_id)
+#     max_width = 0
+#     for part in element_name.split():
+#         text_width = idraw.textsize(part, element_font)[0]
+#         max_width = max(max_width, text_width)
+#     margin_x = 20
+#     pos_x = center[0] - (max_width + element_image.width + margin_x) // 2
+#     text_pos_x = pos_x + max_width + element_image.width + margin_x - max_width // 2 - 15
+#     pos_y += 120
+#     background.alpha_composite(element_image, (pos_x, pos_y - element_image.height // 2))
+#     margin_y = 35
+#     if len(element_name.split()) < 2:
+#         pos_y = pos_y - 15
+#     else:
+#         pos_y -= margin_y // 2 + 17
+#     for part in element_name.split():
+#         idraw.text((text_pos_x, pos_y), part, 'white', element_font, anchor='ma')
+#         pos_y += margin_y
+#
+#     # results
+#     if db.table('Users').get('language').where(id=user_id) == 'RUS':
+#         pos_x = center[0] - 200
+#     else:
+#         pos_x = center[0] - 170
+#     pos_y = 270
+#     idraw.rectangle((pos_x, pos_y, pos_x + 2, pos_y + 160), 'white')
+#
+#     margin_y = 50
+#     if element.id in (1, 4, 5):
+#         captions = [translate('tr_el: passing', user_id)]
+#         pos_y += margin_y
+#     else:
+#         captions = [translate(kws, user_id) for kws in ('tr_el: in', 'tr_el: cornering', 'tr_el: out')]
+#     captions_data = {
+#         (0, 0): ...,
+#         (1, 25): ...,
+#         (26, 50): ...,
+#         (51, 70): ...,
+#         (71, 90): ...,
+#         (91, 99): ...,
+#         (100, 100): ('el_res: perfect', '#00ff2a')
+#     }
+#     pos_x += 20
+#     pos_y += 15
+#     for i in range(len(captions)):
+#         caption = f'{captions[i]}: '
+#         text_width = idraw.textsize(caption, results_font)[0]
+#         result, color = None, None
+#         for s in captions_data:
+#             if s[0] <= results[i] <= s[1]:
+#                 result, color = captions_data[s]
+#                 break
+#         idraw.text((pos_x, pos_y), f'{captions[i]}:', 'white', results_font)
+#         idraw.text((pos_x + text_width, pos_y), translate(result, user_id).lower(), color, results_font)
+#
+#         pos_y += margin_y
+#
+#     if element.id in (1, 4, 5):
+#         pos_y += margin_y
+#
+#     # score
+#     score_caption = f'+{score} {translate("race: score (short)", user_id).lower()}'
+#     pos_y += 50
+#     pos_x -= 10
+#     idraw.text((pos_x, pos_y), score_caption, 'white', score_font)
+#
+#     line = open_image('images/icons/other/line.png').rotate(45)
+#     line.thumbnail((220, 220))
+#     background.alpha_composite(line, (770, 360))
+#
+#     rank = 'C'
+#     pos_x = 930
+#     pos_y = 490
+#     idraw.text((pos_x, pos_y), rank, 'yellow', rank_font, 'mm')
+#     idraw.text((pos_x, pos_y + 45), 'rank', 'white', results_font, 'ma')
+#
+#     return background
 
+
+def generate_move_results_image(player_id, user_id: int, car_id: int, tires: str, element: TrackElement,
+                                 dice: int, priority_dice: int, characteristics_bonus: int, dice_bonus: float,
+                                 event_bonus: float) -> Image.Image:
+    username = db.table('Users').get('username').where(id=player_id)
+    circuit_element_name = translate(element.name, user_id)
+    score_caption = translate('race: score (short)', user_id).lower()
+
+    # шрифты
+    username_font = get_fonts('blogger_sans_bold.ttf', 40)
+    caption_font = get_fonts('blogger_sans.ttf', 30)
+    score_font, score_font_small = get_fonts('drina.ttf', 60, 40)
+
+    # фон
     background = open_image('images/design/modes/race_circuit/move_results.jpg')
     background.thumbnail((1000, 1000))
     idraw = ImageDraw.Draw(background)
 
-    # card
-    # card = Image.open(card)
+    # линия посередине
+    pos_x = background.width // 2
+    pos_y = background.height - 120
+    idraw.rectangle((pos_x, 120, pos_x + 3, pos_y), fill='white')
+
+    # ____________________
     card = generate_card_picture(1005532278, car_id, without_image=True, big_characteristic_font=True)
     card.thumbnail((330, 600))
     margin_x = 100
@@ -159,94 +295,113 @@ def generate_move_results_image(player_id: int, user_id: int, car_id: int, tires
     pos_y = center[1] - car_image.height // 2
     background.alpha_composite(car_image, (pos_x, pos_y))
 
-    center = (background.width - (background.width - card.width - margin_x) // 2,
-              background.height // 2)
+    # значок элемента трассы и приоритетной грани кубика
+    circuit_element_img = open_image(f'images/circuits/turns/{element.id}.png')
+    circuit_element_img.thumbnail((130, 130))
 
-    # username
-    username = db.table('Users').get('username').where(id=player_id)
-    pos_y = 50
-    idraw.text((center[0], pos_y), username, 'white', username_font, anchor='ma')
-
-    # circuit element
-    element_image = open_image(f'images/circuits/turns/{element.id}.png')
-    element_image.thumbnail((100, 100))
-    element_name = translate(element.name, user_id)
-    max_width = 0
-    for part in element_name.split():
-        text_width = idraw.textsize(part, element_font)[0]
-        max_width = max(max_width, text_width)
-    margin_x = 20
-    pos_x = center[0] - (max_width + element_image.width + margin_x) // 2
-    text_pos_x = pos_x + max_width + element_image.width + margin_x - max_width // 2 - 15
-    pos_y += 120
-    background.alpha_composite(element_image, (pos_x, pos_y - element_image.height // 2))
-    margin_y = 35
-    if len(element_name.split()) < 2:
-        pos_y = pos_y - 15
+    if priority_dice == 0:
+        priority_dice_img = open_image(f'images/icons/dice/1.png')
     else:
-        pos_y -= margin_y // 2 + 17
-    for part in element_name.split():
-        idraw.text((text_pos_x, pos_y), part, 'white', element_font, anchor='ma')
-        pos_y += margin_y
+        priority_dice_img = open_image(f'images/icons/dice/{priority_dice}.png')
+    priority_dice_img.thumbnail((100, 100))
 
-    # results
-    if db.table('Users').get('language').where(id=user_id) == 'RUS':
-        pos_x = center[0] - 200
+    el_pos_x = background.width - (3 * background.width // 8) - circuit_element_img.width // 2
+    dice_pos_x = background.width - background.width // 8 - priority_dice_img.width // 2
+    el_pos_y = 150 - circuit_element_img.height
+    dice_pos_y = 150 - priority_dice_img.height
+
+    background.alpha_composite(circuit_element_img, (el_pos_x, el_pos_y))
+    if priority_dice != 0:
+        background.alpha_composite(priority_dice_img, (dice_pos_x, dice_pos_y))
     else:
-        pos_x = center[0] - 170
-    pos_y = 270
-    idraw.rectangle((pos_x, pos_y, pos_x + 2, pos_y + 160), 'white')
+        pos_x = dice_pos_x + priority_dice_img.width // 2
+        pos_y = dice_pos_y + priority_dice_img.height // 2
+        idraw.text((pos_x, pos_y), '-', 'white', score_font, 'mm')
 
-    margin_y = 50
-    if element.id in (1, 4, 5):
-        captions = [translate('tr_el: passing', user_id)]
-        pos_y += margin_y
+    caption = translate('el_res: priority', user_id)
+    pos_y = 170
+    text_width = idraw.textsize(caption, font=caption_font)[0]
+    pos_x = dice_pos_x + priority_dice_img.width // 2 - text_width // 2
+    idraw.text((pos_x, pos_y), caption, font=caption_font)
+    for name_part in circuit_element_name.split():
+        text_width = idraw.textsize(name_part, font=caption_font)[0]
+        pos_x = el_pos_x + circuit_element_img.width // 2 - text_width // 2
+        idraw.text((pos_x, pos_y), name_part, font=caption_font)
+        pos_y += 30
+
+    # юзернейм игрока
+    pos_y = 250
+    caption_parts = (translate('el_res: player move', user_id), username)
+    for i in range(2):
+        caption_part = caption_parts[i]
+        text_width = idraw.textsize(caption_part, font=username_font)[0]
+        pos_x = background.width - background.width // 4 - text_width // 2
+        if i == 0:
+            idraw.text((pos_x, pos_y), caption_part, font=username_font)
+        else:
+            idraw.text((pos_x, pos_y), caption_part, font=username_font, stroke_width=4, stroke_fill='black')
+        pos_y += 40
+
+    # бонусы
+    pos_x = background.width // 2 + 30
+    pos_y = pos_y + 40
+    caption = translate('el_res: rolled', user_id) + ':'
+    text_width = idraw.textsize(caption, font=caption_font)[0]
+    idraw.text((pos_x, pos_y), caption, font=caption_font)
+    if dice != 0:
+        dice_img = open_image(f'images/icons/dice/{dice}.png')
+        dice_img.thumbnail((50, 50))
+        background.alpha_composite(dice_img, (pos_x + text_width + 20, pos_y - 15))
     else:
-        captions = [translate(kws, user_id) for kws in ('tr_el: in', 'tr_el: cornering', 'tr_el: out')]
-    captions_data = {
-        (0, 0): ...,
-        (1, 25): ...,
-        (26, 50): ...,
-        (51, 70): ...,
-        (71, 90): ...,
-        (91, 99): ...,
-        (100, 100): ('el_res: perfect', '#00ff2a')
-    }
-    pos_x += 20
-    pos_y += 15
-    for i in range(len(captions)):
-        caption = f'{captions[i]}: '
-        text_width = idraw.textsize(caption, results_font)[0]
-        result, color = None, None
-        for s in captions_data:
-            if s[0] <= results[i] <= s[1]:
-                result, color = captions_data[s]
-                break
-        idraw.text((pos_x, pos_y), f'{captions[i]}:', 'white', results_font)
-        idraw.text((pos_x + text_width, pos_y), translate(result, user_id).lower(), color, results_font)
+        idraw.text((pos_x + text_width + 20, pos_y - 19), '-', 'white', score_font)
+    captions = [translate('el_res: characteristics', user_id), translate('el_res: dice bonus', user_id),
+                translate('el_res: event bonus', user_id)]
+    values = [characteristics_bonus, dice_bonus, event_bonus]
+    for index in range(len(captions)):
+        caption = captions[index] + ':'
+        value = values[index]
+        if index == 0:
+            value = f'{value} {score_caption}'
+            color = '#30BD03'
+        else:
+            if value < 1:
+                color = 'red'
+            elif value == 1:
+                color = 'white'
+                value = '-'
+            else:
+                color = '#30BD03'
+            value = f'x{value}' if value != '-' else '-'
 
-        pos_y += margin_y
+        pos_y += 50
+        text_width = idraw.textsize(caption, font=caption_font)[0]
+        idraw.text((pos_x, pos_y), caption, font=caption_font)
+        idraw.text((pos_x + text_width + 20, pos_y - 20), value, font=score_font,
+                   fill=color)
 
-    if element.id in (1, 4, 5):
-        pos_y += margin_y
+    # сумма очков
+    line_image = open_image('images/icons/other/line.png').convert(mode='RGBA').rotate(45, expand=True)
+    line_image.thumbnail((150, 150))
 
-    # score
-    score_caption = f'+{score} {translate("race: score (short)", user_id).lower()}'
+    pos_x = background.width - line_image.width - 30
+    pos_y = background.height - line_image.height - 30
+
+    background.alpha_composite(line_image, (pos_x, pos_y))
+
+    score = int(characteristics_bonus * dice_bonus * event_bonus)
+    text_width = idraw.textsize(str(score), font=score_font)[0]
+    pos_x = background.width - 50 - text_width // 2
     pos_y += 50
-    pos_x -= 10
-    idraw.text((pos_x, pos_y), score_caption, 'white', score_font)
 
-    line = open_image('images/icons/other/line.png').rotate(45)
-    line.thumbnail((220, 220))
-    background.alpha_composite(line, (770, 360))
-
-    rank = 'C'
-    pos_x = 930
-    pos_y = 490
-    idraw.text((pos_x, pos_y), rank, 'yellow', rank_font, 'mm')
-    idraw.text((pos_x, pos_y + 45), 'rank', 'white', results_font, 'ma')
+    idraw.text((pos_x, pos_y), str(score), font=score_font, fill='#FFE500')
+    idraw.text((920, pos_y + 50), score_caption, font=score_font_small, fill='#FFE500')
 
     return background
+
+
+# from object_data import Turn
+#
+# generate_move_results_image(1005532278, 1005532278, 4, 'soft', Turn('hard', 4, 0, 0), 1, 6, 50, 1, 0.5).show()
 
 
 def generate_scoreboard_image(user_id: int, score_data: Dict[int, int]) -> Image.Image:

@@ -20,5 +20,17 @@ DICT = {
     "tr_el: passing": ["Прохождение",
                        "Passing"],
     "el_res: perfect": ["Идеально",
-                        "Perfect"]
+                        "Perfect"],
+    "el_res: priority": ["Приоритет",
+                         "Priority"],
+    "el_res: player move": ["Ход игрока",
+                            "Move of player"],
+    "el_res: rolled": ["Выпало",
+                       "Rolled"],
+    "el_res: characteristics": ["Характеристики",
+                                "Characteristics"],
+    "el_res: dice bonus": ["Бонус кубика",
+                           "Dice bonus"],
+    "el_res: event bonus": ["Бонус события",
+                            "Event bonus"]
 }

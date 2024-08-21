@@ -56,19 +56,28 @@ async def update_scoreboard(race: CircuitRace) -> None:
             pass
 
 
-def calculate_score(race: CircuitRace) -> None:
+def calculate_score(race: CircuitRace, element: TrackElement,
+                    player_dice: Dict[int, int]) -> Dict[int, List[float]]:
+    data = dict()
     for player in race.players:
         score = random.randint(50, 100)
         race.score[player].add(score)
+        data[player] = [score, 1, 1]
+    return data
 
-
-async def process_move_results(race: CircuitRace, element: TrackElement) -> None:
+async def process_move_results(race: CircuitRace, element: TrackElement, player_dice: Dict[int, int] = None,
+                               priority_dice: int = 0) -> None:
     for player in race.players:
         for user in race.players:
             car_id = race.deck_states[player].allowed_cars[race.deck_states[player].selected_car_index]
             tires = race.tires[player][car_id][0]
-            move_results = await get_image(generate_move_results_image, player, user, car_id, tires,
-                                           race.circuit.route[0], [100], race.score[player].last)
+            if player_dice is None:
+                dice = 0
+            else:
+                dice = player_dice[player]
+            bonuses = calculate_score(race, element, player_dice)[player]
+            move_results = await get_image(generate_move_results_image, player, user, car_id, tires, element,
+                                           dice, priority_dice, bonuses[0], bonuses[1], bonuses[2])
             await race.send_photo('move_results', user, move_results)
         element.status = 'bad'
         await asyncio.sleep(10)
@@ -137,6 +146,7 @@ async def hold_race(race: CircuitRace) -> None:
     players = race.players
     player_dice = dict()
     for i in range(1, len(race.circuit.route)):
+        priority_dice = random.randint(1, 6)
         if i and (i % 4 == 0):
             for player in players:
                 race.deck_states[player].allowed_cars = race.decks[player].copy()
@@ -157,10 +167,10 @@ async def hold_race(race: CircuitRace) -> None:
             await race.send_photo('track_element', player, images[player], keyboard=menu)
         await select_cards(race)
         await roll_dices(race, player_dice)
-        calculate_score(race)
+        calculate_score(race, element, player_dice)
         for player in players:
             await race.delete_message('track_element', player)
-        await process_move_results(race, element)
+        await process_move_results(race, element, player_dice, priority_dice)
         await update_scoreboard(race)
         element.tag = False
         # for player in players:
