@@ -467,3 +467,85 @@ def generate_scoreboard_image(user_id: int, score_data: Dict[int, int]) -> Image
         position += 1
 
     return background
+
+
+def generate_finish_results_window(data: Dict[int, int], user_id: int) -> Image.Image:
+    # шрифты
+    title_font, caption_font = get_fonts('blogger_sans.ttf', 60, 40)
+    score_font = get_fonts('Drina.ttf', 50)
+
+    # фон
+    background = open_image('images/design/modes/race_circuit/finish.jpg')
+    background.thumbnail((1000, 1000))
+    idraw = ImageDraw.Draw(background)
+
+    # заголовок
+    title = translate('race_res: results', user_id) + ':'
+    text_width = idraw.textsize(title, font=title_font)[0]
+    pos_x = (background.width - text_width) // 2
+    pos_y = 30
+    idraw.text((pos_x, pos_y), title, font=title_font, stroke_width=6, stroke_fill='black')
+
+    # распределение мест
+    usernames = {user: db.table('Users').get('username').where(id=user) for user in data.keys()}
+    max_username_len = max([len(usernames[user]) for user in data.keys()])
+    # start_pos_x = 120
+    if max_username_len <= 7:
+        start_pos_x = 200
+    elif max_username_len <= 10:
+        start_pos_x = 175
+    elif max_username_len < 13:
+        start_pos_x = 150
+    else:
+        start_pos_x = 120
+    pos_x = start_pos_x
+    pos_y = 130 if len(list(data.keys())) == 4 else 220
+    max_text_width = 0
+
+    ind = 0
+    user_place = 0
+    for user in list(data.keys()):
+        if user == user_id:
+            user_place = ind + 1
+            color = '#08ff06'
+        else:
+            color = 'white'
+        username = usernames[user]
+        text_width = idraw.textsize(username, font=caption_font)[0]
+        max_text_width = max(max_text_width, text_width)
+        idraw.text((pos_x, pos_y), username, font=caption_font, fill=color, stroke_fill='black', stroke_width=4)
+        if ind in (0, 1, 2):
+            if ind == 0:
+                path = 'images/design/modes/race_circuit/gold.png'
+            elif ind == 1:
+                path = 'images/design/modes/race_circuit/silver.png'
+            else:
+                path = 'images/design/modes/race_circuit/bronze.png'
+            medal_img = open_image(path)
+            medal_img.thumbnail((75, 75))
+            background.alpha_composite(medal_img, (pos_x - medal_img.width - 10, pos_y - 15))
+        pos_y += 100
+        ind += 1
+
+    pos_x = start_pos_x + max_text_width
+    pos_y = 120 if len(list(data.keys())) == 4 else 210
+    idraw.rectangle((pos_x + 15, pos_y - 5, pos_x + 17, pos_y + 100 * len(list(data.keys())) - 25), fill='white')
+    ind = 0
+    for score in list(data.values()):
+        score = f'{score} ' + translate('race: score (short)', user_id).lower()
+        text_width = idraw.textsize(score, font=score_font)[0]
+        idraw.text((pos_x + 35, pos_y), score, font=score_font, fill='yellow')
+        if ind < len(list(data.keys())) - 1:
+            idraw.rectangle((start_pos_x, pos_y + 75, pos_x + 35 + text_width, pos_y + 77), fill='white')
+        pos_y += 100
+        ind += 1
+
+    # реакция пилота
+    reaction = 'win' if user_place <= len(list(data.keys())) // 2 else 'lose'
+    reaction_img = open_image(f'images/design/modes/race_circuit/{reaction}_reaction.png')
+    reaction_img.thumbnail((450, 450))
+    pos_x = background.width - reaction_img.width
+    pos_y = background.height - reaction_img.height
+    background.alpha_composite(reaction_img, (pos_x, pos_y))
+
+    return background

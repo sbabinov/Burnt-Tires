@@ -146,6 +146,7 @@ async def hold_race(race: CircuitRace) -> None:
     players = race.players
     player_dice = dict()
     for i in range(1, len(race.circuit.route)):
+    # for i in range(1, 2):
         priority_dice = random.randint(1, 6)
         if i and (i % 4 == 0):
             for player in players:
@@ -178,8 +179,41 @@ async def hold_race(race: CircuitRace) -> None:
         #     await race.edit_keyboard('track_element', player, menu)
         # await asyncio.sleep(100)
 
+async def summarize_results(race: CircuitRace) -> None:
+    is_penalties = False
+    score_dict = dict()
+    for player in race.players:
+        if race.penalties[player] != 0:
+            race.score[player].total -= race.penalties[player]
+            is_penalties = True
+        score_dict[player] = race.score[player].total
 
-# ------------------ query handlers ------------------
+    if is_penalties:
+        for user in race.players:
+            penalties_message = f"-                                   '\n" \
+                                f"<b>🔴 {translate('race_res: penalties', language=race.langs[user])}:</b>\n"
+            for player in race.players:
+                if race.penalties[player] != 0:
+                    penalties_message += f"{race.usernames[player]}: <i>-{race.penalties[player]} " \
+                                         f"{translate('race: score (short)', language=race.langs[user]).lower()}</i>\n"
+            await race.send_message('penalties', user, penalties_message)
+        await asyncio.sleep(5)
+        for user in race.players:
+            await race.delete_message('penalties', user)
+
+    for player in race.players:
+        image = await get_image(generate_finish_results_window, score_dict, player)
+        menu = CircuitRaceKeyboard.summarize_results_menu(race.langs[player])
+        await race.send_photo('score', player, image, keyboard=menu)
+
+
+def clear_race_data(race: CircuitRace) -> None:
+    players = [player for player in race.players]
+    for player in players:
+        del active_players[player]
+
+
+        # ------------------ query handlers ------------------
 
 
 @dp.callback_query_handler(text_contains='race_start')
@@ -263,3 +297,10 @@ async def player_change_point(call: CallbackQuery):
     race.current_point_states[user_id][point_index] = point_state
     menu = CircuitRaceKeyboard.track_element_menu(race.current_point_states[user_id])
     await call.message.edit_reply_markup(menu)
+
+
+@dp.callback_query_handler(text='race-summarize_results')
+async def show_trophies(call: CallbackQuery):
+    await call.answer()
+    await call.message.delete()
+

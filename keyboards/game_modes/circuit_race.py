@@ -3,7 +3,7 @@ from typing import List
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from localisation.localisation import translate
-from object_data.circuits import TrackElement
+from annotations import Language
 
 
 class CircuitRaceKeyboard:
@@ -97,3 +97,13 @@ class CircuitRaceKeyboard:
                 text = '🟢'
             key_points.append(InlineKeyboardButton(text=text, callback_data=f"race-element-pt_{i}_{states[i]}"))
         return InlineKeyboardMarkup(row_width=2, inline_keyboard=[key_points])
+
+    @staticmethod
+    def summarize_results_menu(language: Language) -> InlineKeyboardMarkup:
+        menu = [
+            [
+                InlineKeyboardButton(text=f"{translate('race_res: next', language=language)} ➡️",
+                                     callback_data="race-summarize_results")
+            ]
+        ]
+        return InlineKeyboardMarkup(row_width=2, inline_keyboard=menu)

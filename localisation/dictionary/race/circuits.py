@@ -32,5 +32,11 @@ DICT = {
     "el_res: dice bonus": ["Бонус кубика",
                            "Dice bonus"],
     "el_res: event bonus": ["Бонус события",
-                            "Event bonus"]
+                            "Event bonus"],
+    "race_res: results": ["Результаты",
+                          "Results"],
+    "race_res: penalties": ["Штрафы",
+                            "Penalties"],
+    "race_res: next": ["Дальше",
+                       "Next"]
 }
