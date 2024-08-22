@@ -66,5 +66,13 @@ DICT = {
     "circuit voting": ["Проголосуйте за трассу",
                        "Vote for the race circuit"],
     "circuit": ["Трасса",
-                "Circuit"]
+                "Circuit"],
+    "difficulty": ["Сложность",
+                   "Difficulty"],
+    "difficulty: easy": ["Легко",
+                         "Easy"],
+    "difficulty: medium": ["Умеренно",
+                           "Medium"],
+    "difficulty: hard": ["Сложно",
+                         "Hard"]
 }

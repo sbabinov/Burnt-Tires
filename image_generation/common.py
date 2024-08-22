@@ -10,11 +10,6 @@ def open_image(path: str) -> Image:
     return Image.open(os.path.join(path)).convert(mode='RGBA')
 
 
-# class Background(Image):
-#     def get_center(self) -> int:
-#         return Point(self.width // 2
-#
-#
 class Point:
     def __init__(self, x: int, y: int) -> None:
         self.x = x

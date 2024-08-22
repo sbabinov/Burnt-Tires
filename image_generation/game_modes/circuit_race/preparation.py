@@ -1,10 +1,10 @@
-from typing import List, Tuple, Union
+from typing import List
 
 from PIL import Image, ImageDraw
 
 from loader import db
 from annotations import Language
-from object_data import WEATHER
+from object_data import WEATHER, Circuit
 from localisation.localisation import translate
 from image_generation.common import get_fonts, open_image, black_overlay
 
@@ -78,8 +78,7 @@ def generate_race_members_image(language: Language, members: List[int],
     return background
 
 
-def generate_circuit_choice_image(language: Language,
-                                  circuit_ids: List[int]) -> Image.Image:
+def generate_circuit_choice_image(language: Language, circuits: List[Circuit]) -> Image.Image:
     title_font, name_font, caption_font = get_fonts('blogger_sans_bold.ttf', 55, 35, 40)
 
     background = open_image('images/design/modes/race_circuit/background1.jpg')
@@ -100,33 +99,33 @@ def generate_circuit_choice_image(language: Language,
 
     circuit_images = dict()
     circuits_height = []
-    for circuit_id in circuit_ids:
-        circuit_image = open_image(f'images/circuits/{circuit_id}/circuit.png')
+    for circuit in circuits:
+        circuit_image = open_image(f'images/circuits/{circuit.name}/circuit.png')
         circuit_image.thumbnail((400, 300))
-        circuit_images[circuit_id] = circuit_image
+        circuit_images[circuit.name] = circuit_image
         circuits_height.append(circuit_image.height)
 
+    text_height = 150
+    margin_top = 50
     pos_x = 0
+    bottom_pos_y = background.height - (background.height - text_height - max(circuits_height)) // 2 + margin_top
     ind = 0
-    for circuit_id in circuit_ids:
-        circuit_image = circuit_images[circuit_id]
+    for circuit in circuits:
+        circuit_image = circuit_images[circuit.name]
         circuit_image.thumbnail((400, 300))
 
-        circ_pos_y = 130 + max(circuits_height) - circuit_image.height
+        circ_pos_y = bottom_pos_y - text_height - circuit_image.height
         circ_pos_x = pos_x + (background.width // 2 - circuit_image.width) // 2
         background.alpha_composite(circuit_image, (circ_pos_x, circ_pos_y))
 
-        circuit_name = db.table('Circuits').get('name').where(id=circuit_id)
-
-        text_width = idraw.textsize(circuit_name, font=name_font)[0]
+        text_width = idraw.textsize(circuit.name, font=name_font)[0]
         name_pos_x = pos_x + (background.width // 2 - text_width) // 2
         name_pos_y = circ_pos_y + circuit_image.height + 30
-        idraw.text((name_pos_x, name_pos_y), circuit_name, font=name_font,
+        idraw.text((name_pos_x, name_pos_y), circuit.name, font=name_font,
                    stroke_fill='black', stroke_width=4)
 
-        country = db.table('Circuits').get('country').where(id=circuit_id)
-        country_translation = translate(country, language=language)
-        flag = open_image(f'images/flags/{country}/default.jpg')
+        country_translation = translate(circuit.country, language=language)
+        flag = open_image(f'images/flags/{circuit.country}/default.jpg')
         flag.thumbnail((75, 75))
 
         text_width = idraw.textsize(country_translation, font=caption_font)[0]
@@ -143,10 +142,9 @@ def generate_circuit_choice_image(language: Language,
     return background
 
 
-def generate_race_info_image(circuit_id: int, date: str, time: str,
-                             weather: int, hint: str) -> Image.Image:
+def generate_race_info_image(circuit: Circuit, date: str, time: str, weather: int, hint: str) -> Image.Image:
     # background
-    background = open_image(f'images/circuits/{circuit_id}/info.jpg')
+    background = open_image(f'images/circuits/{circuit.name}/info.jpg')
     background.thumbnail((1000, 1000))
     black_overlay(background, 180)
     idraw = ImageDraw.Draw(background)
@@ -164,20 +162,19 @@ def generate_race_info_image(circuit_id: int, date: str, time: str,
                      line_pos_y + line_height), fill='white')
 
     # left block
-    circuit = open_image(f'images/circuits/{circuit_id}/circuit.png')
-    circuit.thumbnail((500, 500))
-    circuit_name = db.table('Circuits').get('name').where(id=circuit_id)
-    text_size = idraw.textsize(circuit_name, circuit_font)
+    circuit_image = open_image(f'images/circuits/{circuit.name}/circuit.png')
+    circuit_image.thumbnail((500, 500))
+    text_size = idraw.textsize(circuit.name, circuit_font)
     margin_y = 35
 
     line_center_y = line_pos_y + line_height // 2
     circuit_center_x = line_pos_x // 2
-    pos_x = circuit_center_x - circuit.width // 2
-    pos_y = line_center_y - (circuit.height + margin_y + text_size[1]) // 2
+    pos_x = circuit_center_x - circuit_image.width // 2
+    pos_y = line_center_y - (circuit_image.height + margin_y + text_size[1]) // 2
     t_pos_x = circuit_center_x - text_size[0] // 2
-    t_pos_y = pos_y + circuit.height + margin_y
-    background.alpha_composite(circuit, (pos_x, pos_y))
-    idraw.text((t_pos_x, t_pos_y), circuit_name, 'white', circuit_font)
+    t_pos_y = pos_y + circuit_image.height + margin_y
+    background.alpha_composite(circuit_image, (pos_x, pos_y))
+    idraw.text((t_pos_x, t_pos_y), circuit.name, 'white', circuit_font)
 
     # right block
     day_t_size = idraw.textsize(date, date_font)

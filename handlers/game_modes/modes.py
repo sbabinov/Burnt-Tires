@@ -1,18 +1,27 @@
 import asyncio
 from io import BytesIO
-from typing import List, Dict, Literal, Tuple, Generator
+from typing import List, Dict, Literal, Generator, Any
 
+import aiogram.utils.exceptions
 from aiogram.types import InputMedia
 from aiogram.types import InlineKeyboardMarkup as Keyboard
 from aiogram.utils.exceptions import MessageNotModified
 
 from loader import bot, db
 from localisation.localisation import translate
-from object_data import TIRES
+from object_data import Circuit
 
 
 class Race:
     """ Base class for game modes. """
+    class Score:
+        total: int = 0
+        last: int = 0
+
+        def add(self, score) -> None:
+            self.total += score
+            self.last = score
+
     players: List[int] = []
     langs: Dict[int, Literal["RUS", "ENG"]]
     messages: Dict[int, Dict] = {}
@@ -43,6 +52,10 @@ class Race:
         msg = await bot.send_photo(player, photo, caption, reply_markup=keyboard)
         self.messages[player][name] = msg.message_id
 
+    async def send_sticker(self, name: str, player: int, sticker_id: str) -> None:
+        msg = await bot.send_sticker(player, sticker_id)
+        self.messages[player][name] = msg.message_id
+
     async def edit_text(self, name: str, player: int, text: str,
                         keyboard: Keyboard = None) -> None:
         message_id = self.messages[player][name]
@@ -57,9 +70,16 @@ class Race:
         media = InputMedia(media=media)
         await bot.edit_message_media(media, player, message_id, reply_markup=keyboard)
 
+    async def edit_keyboard(self, name: str, player: int, keyboard: Keyboard = None) -> None:
+        message_id = self.messages[player][name]
+        await bot.edit_message_reply_markup(player, message_id, reply_markup=keyboard)
+
     async def delete_message(self, name: str, player: int) -> None:
         message_id = self.messages[player][name]
-        await bot.delete_message(player, message_id)
+        try:
+            await bot.delete_message(player, message_id)
+        except aiogram.utils.exceptions.MessageToDeleteNotFound:
+            pass
 
     async def confirm(self) -> int:
         from ..game_search.confirmation import confirm_game
@@ -83,19 +103,37 @@ class Race:
     async def start(self) -> None:
         raise NotImplementedError
 
+# ------ Circuit race ------
+
+class DeckState:
+    allowed_cars: List[int] = list()
+    selected_car_index: int = 0
+    is_flipped: bool = False
+    is_selected: bool = False
 
 class CircuitRace(Race):
     def __init__(self, players: List[int]) -> None:
         super().__init__(players)
-        self.circuit: int | None = None
+        self.circuit: Circuit | None = None
         self.weather: int | None = None
-        self.player_score: int | None = None
+        self.score: Dict[int, Race.Score] = dict()
+        self.penalties: Dict[int, int] = dict()
         self.usernames: Dict[int, str] | None = None
-        self.decks: Dict[int, List[int]] = {}
+        self.decks: Dict[int, List[int]] = dict()
+        self.cards: Dict[int, Dict[int, BytesIO]] = dict()
+        self.deck_states: Dict[int, DeckState] = dict()
         self.ready_players: List[int] = []
-        self.tires: Dict[int, Dict[int, List[str, float] | None]] = {}
+        self.tires: Dict[int, Dict[int, List[str, float] | None]] = dict()
+        self.agression_state: Dict[int, int] = dict()
+        self.car_states: Dict[int, List[int]] = dict()
+        self.other_data: Any = None
         for player in self.players:
             active_players[player] = self
+            self.score[player] = Race.Score()
+            self.penalties[player] = 0
+            self.cards[player] = dict()
+            self.car_states[player] = [100, 100, 100, 100, 100]
+        self.current_point_states: Dict[int, List[int]] = dict()
 
     def get_cars(self, user_id: int) -> Generator:
         for car_id in self.decks[user_id]:

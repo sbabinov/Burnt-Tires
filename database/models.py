@@ -294,7 +294,6 @@ class Table:
                     entry_data.append(datatype(kwargs.get(field)).convert_to_db())
                 ind += 1
 
-        print(entry_data)
         self.__cursor.execute(f"INSERT INTO '{self.__name}' VALUES "
                               f"({('?, ' * len(table_fields))[:-2]})", entry_data)
         self.__connection.commit()

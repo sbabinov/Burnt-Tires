@@ -49,6 +49,14 @@ CHARACTERISTICS = {
     'max_speed': [100, 400],
     'acceleration_time': [1.5, 20]
 }
+CHARACTERISTIC_DIMENSIONS = {
+    'power': 'h.p.',
+    'max_speed': 'km/h',
+    'acceleration_time': 's',
+    'fuel_volume': 'L',
+    'fuel_consumption': 'L',
+    'weight': 'T'
+}
 TIRES = ['soft', 'medium', 'hard', 'rain', 'rally', 'off_road', 'drag']
 TIRES_EMOJI = {
     'soft': '🟢',

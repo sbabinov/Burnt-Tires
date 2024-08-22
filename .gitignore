@@ -3,3 +3,7 @@ __pycache__
 /.env
 /database/main.db
 /database/service_db/user_data/
+images/
+fonts/
+*.png
+*.jpg

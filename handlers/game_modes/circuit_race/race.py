@@ -1,9 +1,319 @@
-from ..modes import CircuitRace
-from .preparation import show_players, select_circuit, show_race_info, select_tires
+import copy
+import time
+import asyncio
+import random
+from copy import deepcopy
+
+import aiogram.utils.exceptions
+from aiogram.types import CallbackQuery
+
+from loader import dp, bot
+from ..modes import CircuitRace, active_players
+from image_generation import get_image, generate_card_backside_picture
+from image_generation.game_modes.circuit_race.race import *
+from keyboards.game_modes.circuit_race import CircuitRaceKeyboard
+from handlers.common.loading import loading, loading_messages
+from object_data.common import DICE_STICKERS
 
 
-async def start_circuit_race(race: CircuitRace):
-    await show_players(race)
-    await select_circuit(race)
-    await show_race_info(race)
-    await select_tires(race)
+async def select_cards(race: CircuitRace) -> None:
+    is_last = len(race.deck_states[race.players[0]].allowed_cars) == 1
+    for player in race.players:
+        car_id = race.deck_states[player].allowed_cars[0]
+        card = copy.deepcopy(race.cards[player][car_id])
+        if not is_last:
+            keyboard = CircuitRaceKeyboard.card_selection_menu(player)
+        else:
+            keyboard = None
+        await race.send_photo('cards', player, card, keyboard=keyboard)
+    if is_last:
+        await asyncio.sleep(4)
+        for player in race.players:
+            await race.delete_message('cards', player)
+        return
+    for i in range(15):
+        if all(race.deck_states[player].is_selected for player in race.players):
+            break
+        await asyncio.sleep(1)
+    for player in race.players:
+        if not race.deck_states[player].is_selected:
+            race.deck_states[player].selected_car_index = 0
+            await race.delete_message('cards', player)
+        else:
+            race.deck_states[player].is_selected = False
+        await loading(player, end=True)
+
+
+async def update_scoreboard(race: CircuitRace) -> None:
+    score = dict()
+    for player in race.score:
+        score[player] = race.score[player].total
+    for player in race.players:
+        scoreboard = await get_image(generate_scoreboard_image, player, score)
+        try:
+            await race.edit_media('scoreboard', player, scoreboard)
+        except aiogram.utils.exceptions.MessageNotModified:
+            pass
+
+
+def calculate_score(race: CircuitRace, element: TrackElement,
+                    player_dice: Dict[int, int]) -> Dict[int, List[float]]:
+    data = dict()
+    for player in race.players:
+        score = random.randint(50, 100)
+        race.score[player].add(score)
+        data[player] = [score, 1, 1]
+    return data
+
+
+async def process_move_results(race: CircuitRace, element: TrackElement, player_dice: Dict[int, int] = None,
+                               priority_dice: int = 0) -> None:
+    for player in race.players:
+        for user in race.players:
+            car_id = race.deck_states[player].allowed_cars[race.deck_states[player].selected_car_index]
+            tires = race.tires[player][car_id][0]
+            if player_dice is None:
+                dice = 0
+            else:
+                dice = player_dice[player]
+            bonuses = calculate_score(race, element, player_dice)[player]
+            move_results = await get_image(generate_move_results_image, player, user, car_id, tires, element,
+                                           dice, priority_dice, bonuses[0], bonuses[1], bonuses[2])
+            await race.send_photo('move_results', user, move_results)
+        element.status = 'bad'
+        await asyncio.sleep(10)
+        for user in race.players:
+            await race.delete_message('move_results', user)
+    for player in race.players:
+        race.deck_states[player].allowed_cars.pop(race.deck_states[player].selected_car_index)
+
+
+async def start(race: CircuitRace) -> None:
+    players = race.players
+    race.circuit.route[0].tag = True
+    race.other_data = dict()
+    score = dict()
+    for player in race.score:
+        score[player] = race.score[player].total
+    images = dict()
+    for player in players:
+        images[player] = await get_image(generate_track_element_image, race.langs[player], race.circuit, 0)
+    for player in players:
+        menu = CircuitRaceKeyboard.start_race_menu(player, 0)
+        scoreboard = await get_image(generate_scoreboard_image, player, score)
+        await race.send_photo('scoreboard', player, scoreboard)
+        await race.send_photo('start', player, images[player], keyboard=menu)
+    await select_cards(race)
+
+    n_lights = 5
+    for n in range(1, n_lights + 1):
+        for player in players:
+            keyboard = CircuitRaceKeyboard.start_race_menu(player, n)
+            if not race.penalties[player]:
+                await race.edit_keyboard('start', player, keyboard)
+        await asyncio.sleep(1.5)
+    await asyncio.sleep(random.choice([n / 10 for n in range(7, 15)]))
+    for player in players:
+        keyboard = CircuitRaceKeyboard.start_race_menu(player, 0)
+        if not race.penalties[player]:
+            await race.edit_keyboard('start', player, keyboard)
+            race.other_data[player] = time.time()
+
+    begin_time = time.time()
+    while (len(race.other_data) != 0) and (time.time() - begin_time < 8):
+        await asyncio.sleep(1)
+    for player in players:
+        await loading(player, end=True)
+
+    await process_move_results(race, race.circuit.route[0])
+    await update_scoreboard(race)
+    await asyncio.sleep(1.5)
+    for player in players:
+        await race.delete_message('race_start_result', player)
+    race.circuit.route[0].tag = False
+
+
+async def roll_dices(race: CircuitRace, player_dice: Dict[int, int]) -> None:
+    for player in race.players:
+        score = random.randint(1, 6)
+        player_dice[player] = score
+        await race.send_sticker('dice', player, DICE_STICKERS[score])
+    await asyncio.sleep(4)
+    for player in race.players:
+        await race.delete_message('dice', player)
+
+
+async def hold_race(race: CircuitRace) -> None:
+    players = race.players
+    player_dice = dict()
+    for i in range(1, len(race.circuit.route)):
+        # for i in range(1, 1):
+        priority_dice = random.randint(1, 6)
+        if i and (i % 4 == 0):
+            for player in players:
+                race.deck_states[player].allowed_cars = race.decks[player].copy()
+        element = race.circuit.route[i]
+        for player in players:
+            race.current_point_states[player] = [0] * element.key_points
+        element.tag = True
+        element.status = 'current'
+        images = dict()
+        for player in players:
+            await loading(player, loading_messages['default'])
+        for player in players:
+            images[player] = await get_image(generate_track_element_image,
+                                             race.langs[player], race.circuit, i, True)
+        menu = CircuitRaceKeyboard.degree_of_aggression_menu(2)
+        for player in players:
+            await loading(player, end=True)
+            await race.send_photo('track_element', player, images[player], keyboard=menu)
+        await select_cards(race)
+        await roll_dices(race, player_dice)
+        calculate_score(race, element, player_dice)
+        for player in players:
+            await race.delete_message('track_element', player)
+        await process_move_results(race, element, player_dice, priority_dice)
+        await update_scoreboard(race)
+        element.tag = False
+        # for player in players:
+        #     menu = CircuitRaceKeyboard.track_element_menu(race.current_point_states[player])
+        #     await race.edit_keyboard('track_element', player, menu)
+        # await asyncio.sleep(100)
+
+
+async def summarize_results(race: CircuitRace) -> None:
+    is_penalties = False
+    score_dict = dict()
+    for player in race.players:
+        if race.penalties[player] != 0:
+            race.score[player].total -= race.penalties[player]
+            is_penalties = True
+        score_dict[player] = race.score[player].total
+
+    if is_penalties:
+        for user in race.players:
+            penalties_message = f"-                                   '\n" \
+                                f"<b>🔴 {translate('race_res: penalties', language=race.langs[user])}:</b>\n"
+            for player in race.players:
+                if race.penalties[player] != 0:
+                    penalties_message += f"{race.usernames[player]}: <i>-{race.penalties[player]} " \
+                                         f"{translate('race: score (short)', language=race.langs[user]).lower()}</i>\n"
+            await race.send_message('penalties', user, penalties_message)
+        await asyncio.sleep(5)
+        for user in race.players:
+            await race.delete_message('penalties', user)
+
+    for player in race.players:
+        image = await get_image(generate_finish_results_window, score_dict, player)
+        menu = CircuitRaceKeyboard.summarize_results_menu(race.langs[player])
+        await race.send_photo('score', player, image, keyboard=menu)
+
+        # ------------------ query handlers ------------------
+
+
+@dp.callback_query_handler(text_contains='race_start')
+async def player_select_circuit(call: CallbackQuery):
+    await call.answer()
+    user_id = call.from_user.id
+    race = active_players[user_id]
+    if (race.score[user_id].total != 0) and (race.penalties[user_id] == 0):
+        return
+    if (race.score[user_id].total == 0) and (not race.other_data.get(user_id)):
+        race.penalties[user_id] += 50
+        await race.delete_message('start', user_id)
+        await race.send_message('race_start_result', user_id, 'False start!')
+        if race.other_data.get(user_id):
+            del race.other_data[user_id]
+        return await loading(user_id, frames=loading_messages['clock'])
+    diff = time.time() - race.other_data[user_id]
+    await race.delete_message('start', user_id)
+    if diff < 0.5:
+        race.score[user_id].add(50)
+        await race.send_message('race_start_result', user_id, 'Perfect!')
+    elif diff < 1:
+        race.score[user_id].add(25)
+        await race.send_message('race_start_result', user_id, 'Good!')
+    else:
+        race.score[user_id].add(10)
+        await race.send_message('race_start_result', user_id, 'Not bad!')
+    del race.other_data[user_id]
+    await loading(user_id, frames=loading_messages['clock'])
+
+
+@dp.callback_query_handler(text_contains='race-select-card_')
+async def player_select_card(call: CallbackQuery):
+    await call.answer()
+    user_id = call.from_user.id
+    race = active_players[user_id]
+    deck_state = race.deck_states[user_id]
+    action = call.data.split('_')[1]
+    if (action == 'right') and (not deck_state.is_selected):
+        deck_state.selected_car_index += 1
+        if deck_state.selected_car_index >= len(deck_state.allowed_cars):
+            deck_state.selected_car_index = 0
+    elif (action == 'left') and (not deck_state.is_selected):
+        deck_state.selected_car_index -= 1
+        if deck_state.selected_car_index < 0:
+            deck_state.selected_car_index = len(deck_state.allowed_cars) - 1
+    elif action == 'flip':
+        if not deck_state.is_flipped:
+            car_id = deck_state.allowed_cars[deck_state.selected_car_index]
+            card = await get_image(generate_card_backside_picture, user_id, car_id, race.tires[user_id][car_id][0],
+                                   race.tires[user_id][car_id][1], race.car_states[user_id])
+            deck_state.is_flipped = True
+            await race.edit_media('cards', user_id, card, call.message.reply_markup)
+            return
+    else:
+        await call.message.delete()
+        await loading(user_id, loading_messages['clock'])
+        deck_state.is_selected = True
+        return
+
+    card = deepcopy(race.cards[user_id][deck_state.allowed_cars[deck_state.selected_car_index]])
+    deck_state.is_flipped = False
+    await race.edit_media('cards', user_id, card, call.message.reply_markup)
+
+
+@dp.callback_query_handler(text_contains='race-agression_')
+async def player_change_point(call: CallbackQuery):
+    await call.answer()
+    user_id = call.from_user.id
+    race = active_players[user_id]
+    state = int(call.data.split('_')[1])
+    race.agression_state[user_id] = state
+    menu = CircuitRaceKeyboard.degree_of_aggression_menu(state)
+    await race.edit_keyboard('track_element', user_id, menu)
+
+
+@dp.callback_query_handler(text_contains='race-element-pt_')
+async def player_change_point(call: CallbackQuery):
+    await call.answer()
+    user_id = call.from_user.id
+    race = active_players[user_id]
+    data = call.data.split('_')
+    point_index = int(data[1])
+    point_state = int(data[2])
+    point_state += 1
+    if point_state > 4:
+        point_state = 1
+    race.current_point_states[user_id][point_index] = point_state
+    menu = CircuitRaceKeyboard.track_element_menu(race.current_point_states[user_id])
+    await call.message.edit_reply_markup(menu)
+
+
+@dp.callback_query_handler(text='race-summarize_results')
+async def show_trophies(call: CallbackQuery):
+    await call.answer()
+    await call.message.delete()
+    user_id = call.from_user.id
+    race = active_players[user_id]
+    image = await get_image(generate_finish_score_window, race.langs[user_id], random.randint(10, 50))
+    menu = CircuitRaceKeyboard.exit_menu(race.langs[user_id])
+    await race.send_photo('trophies', user_id, image, keyboard=menu)
+    del active_players[user_id]
+
+
+@dp.callback_query_handler(text='race-exit')
+async def exit_race(call: CallbackQuery):
+    await call.answer()
+    await call.message.delete()

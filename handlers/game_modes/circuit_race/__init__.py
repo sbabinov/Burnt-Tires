@@ -1,1 +1,2 @@
-from .race import *
+from .start import *
+from .race import dp

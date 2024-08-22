@@ -2,10 +2,14 @@ import importlib
 from .dictionary import *
 
 modules = [
+    '.common',
     '.dictionary',
     '.date',
     '.hints',
-    '.cars'
+    '.cars.car_parts',
+    '.cars.characteristics',
+    '.race.circuits',
+    '.race.common'
 ]
 
 DICTIONARY = dict()

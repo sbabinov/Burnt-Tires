@@ -24,11 +24,12 @@ def translate(keywords: str, user_id: int = None, language: Language = None) -> 
 
 
 def get_month_form_rus(month: str) -> str:
-    form = DICTIONARY[month][LANGUAGES['RUS']][:-1]
+    form = DICTIONARY[month][LANGUAGES['RUS']]
     if month not in ['March', 'August']:
-        form += 'я'
+        form = form[:-1] + 'я'
     else:
         form += 'а'
+    return form
 
 
 def translate_date(month: str, day: int, user_id: int = None, language: Language = None) -> str:
