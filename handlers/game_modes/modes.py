@@ -2,6 +2,7 @@ import asyncio
 from io import BytesIO
 from typing import List, Dict, Literal, Generator, Any
 
+import aiogram.utils.exceptions
 from aiogram.types import InputMedia
 from aiogram.types import InlineKeyboardMarkup as Keyboard
 from aiogram.utils.exceptions import MessageNotModified
@@ -75,7 +76,10 @@ class Race:
 
     async def delete_message(self, name: str, player: int) -> None:
         message_id = self.messages[player][name]
-        await bot.delete_message(player, message_id)
+        try:
+            await bot.delete_message(player, message_id)
+        except aiogram.utils.exceptions.MessageToDeleteNotFound:
+            pass
 
     async def confirm(self) -> int:
         from ..game_search.confirmation import confirm_game
@@ -121,12 +125,14 @@ class CircuitRace(Race):
         self.ready_players: List[int] = []
         self.tires: Dict[int, Dict[int, List[str, float] | None]] = dict()
         self.agression_state: Dict[int, int] = dict()
+        self.car_states: Dict[int, List[int]] = dict()
         self.other_data: Any = None
         for player in self.players:
             active_players[player] = self
             self.score[player] = Race.Score()
             self.penalties[player] = 0
             self.cards[player] = dict()
+            self.car_states[player] = [100, 100, 100, 100, 100]
         self.current_point_states: Dict[int, List[int]] = dict()
 
     def get_cars(self, user_id: int) -> Generator:

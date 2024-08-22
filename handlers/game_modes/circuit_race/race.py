@@ -7,9 +7,9 @@ from copy import deepcopy
 import aiogram.utils.exceptions
 from aiogram.types import CallbackQuery
 
-from loader import dp
+from loader import dp, bot
 from ..modes import CircuitRace, active_players
-from image_generation import get_image
+from image_generation import get_image, generate_card_backside_picture
 from image_generation.game_modes.circuit_race.race import *
 from keyboards.game_modes.circuit_race import CircuitRaceKeyboard
 from handlers.common.loading import loading, loading_messages
@@ -64,6 +64,7 @@ def calculate_score(race: CircuitRace, element: TrackElement,
         race.score[player].add(score)
         data[player] = [score, 1, 1]
     return data
+
 
 async def process_move_results(race: CircuitRace, element: TrackElement, player_dice: Dict[int, int] = None,
                                priority_dice: int = 0) -> None:
@@ -146,7 +147,7 @@ async def hold_race(race: CircuitRace) -> None:
     players = race.players
     player_dice = dict()
     for i in range(1, len(race.circuit.route)):
-    # for i in range(1, 1):
+        # for i in range(1, 1):
         priority_dice = random.randint(1, 6)
         if i and (i % 4 == 0):
             for player in players:
@@ -179,6 +180,7 @@ async def hold_race(race: CircuitRace) -> None:
         #     await race.edit_keyboard('track_element', player, menu)
         # await asyncio.sleep(100)
 
+
 async def summarize_results(race: CircuitRace) -> None:
     is_penalties = False
     score_dict = dict()
@@ -205,7 +207,6 @@ async def summarize_results(race: CircuitRace) -> None:
         image = await get_image(generate_finish_results_window, score_dict, player)
         menu = CircuitRaceKeyboard.summarize_results_menu(race.langs[player])
         await race.send_photo('score', player, image, keyboard=menu)
-
 
         # ------------------ query handlers ------------------
 
@@ -255,7 +256,13 @@ async def player_select_card(call: CallbackQuery):
         if deck_state.selected_car_index < 0:
             deck_state.selected_car_index = len(deck_state.allowed_cars) - 1
     elif action == 'flip':
-        ...
+        if not deck_state.is_flipped:
+            car_id = deck_state.allowed_cars[deck_state.selected_car_index]
+            card = await get_image(generate_card_backside_picture, user_id, car_id, race.tires[user_id][car_id][0],
+                                   race.tires[user_id][car_id][1], race.car_states[user_id])
+            deck_state.is_flipped = True
+            await race.edit_media('cards', user_id, card, call.message.reply_markup)
+            return
     else:
         await call.message.delete()
         await loading(user_id, loading_messages['clock'])
@@ -263,6 +270,7 @@ async def player_select_card(call: CallbackQuery):
         return
 
     card = deepcopy(race.cards[user_id][deck_state.allowed_cars[deck_state.selected_car_index]])
+    deck_state.is_flipped = False
     await race.edit_media('cards', user_id, card, call.message.reply_markup)
 
 
