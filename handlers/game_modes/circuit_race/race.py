@@ -146,7 +146,7 @@ async def hold_race(race: CircuitRace) -> None:
     players = race.players
     player_dice = dict()
     for i in range(1, len(race.circuit.route)):
-    # for i in range(1, 2):
+    # for i in range(1, 1):
         priority_dice = random.randint(1, 6)
         if i and (i % 4 == 0):
             for player in players:
@@ -205,12 +205,6 @@ async def summarize_results(race: CircuitRace) -> None:
         image = await get_image(generate_finish_results_window, score_dict, player)
         menu = CircuitRaceKeyboard.summarize_results_menu(race.langs[player])
         await race.send_photo('score', player, image, keyboard=menu)
-
-
-def clear_race_data(race: CircuitRace) -> None:
-    players = [player for player in race.players]
-    for player in players:
-        del active_players[player]
 
 
         # ------------------ query handlers ------------------
@@ -303,4 +297,15 @@ async def player_change_point(call: CallbackQuery):
 async def show_trophies(call: CallbackQuery):
     await call.answer()
     await call.message.delete()
+    user_id = call.from_user.id
+    race = active_players[user_id]
+    image = await get_image(generate_finish_score_window, race.langs[user_id], random.randint(10, 50))
+    menu = CircuitRaceKeyboard.exit_menu(race.langs[user_id])
+    await race.send_photo('trophies', user_id, image, keyboard=menu)
+    del active_players[user_id]
 
+
+@dp.callback_query_handler(text='race-exit')
+async def exit_race(call: CallbackQuery):
+    await call.answer()
+    await call.message.delete()

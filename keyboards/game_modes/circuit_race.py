@@ -107,3 +107,13 @@ class CircuitRaceKeyboard:
             ]
         ]
         return InlineKeyboardMarkup(row_width=2, inline_keyboard=menu)
+
+    @staticmethod
+    def exit_menu(language: Language) -> InlineKeyboardMarkup:
+        menu = [
+            [
+                InlineKeyboardButton(text=f"{translate('race_res: exit', language=language)} ➡️",
+                                     callback_data="race-exit")
+            ]
+        ]
+        return InlineKeyboardMarkup(row_width=2, inline_keyboard=menu)

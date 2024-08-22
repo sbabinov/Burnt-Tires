@@ -549,3 +549,31 @@ def generate_finish_results_window(data: Dict[int, int], user_id: int) -> Image.
     background.alpha_composite(reaction_img, (pos_x, pos_y))
 
     return background
+
+
+def generate_finish_score_window(language: Language, trophies: int) -> Image.Image:
+    # шрифты
+    title_font, trophies_font = get_fonts('blogger_sans.ttf', 60, 120)
+
+    background = open_image('images/design/modes/race_circuit/finish.jpg')
+    background.thumbnail((1000, 1000))
+    idraw = ImageDraw.Draw(background)
+
+    # заголовок
+    title = translate('race_res: results', language=language) + ':'
+    text_width = idraw.textsize(title, font=title_font)[0]
+    pos_x = (background.width - text_width) // 2
+    pos_y = 30
+    idraw.text((pos_x, pos_y), title, font=title_font, stroke_width=5, stroke_fill='black')
+
+    # трофеи
+    trophy = open_image('images/design/modes/race_circuit/divisions/trophy.png')
+    trophy.thumbnail((100, 100))
+    str_trophies = ('+' if trophies > 0 else '') + str(trophies)
+    text_width = idraw.textsize(str_trophies, font=trophies_font)[0] + 20 + trophy.width
+    pos_x = (background.width - text_width) // 2
+    pos_y = 250
+    idraw.text((pos_x, pos_y), str_trophies, font=trophies_font, stroke_fill='black', stroke_width=4)
+    background.alpha_composite(trophy, (pos_x + text_width - trophy.width, pos_y - 5))
+
+    return background

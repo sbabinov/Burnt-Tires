@@ -38,5 +38,7 @@ DICT = {
     "race_res: penalties": ["Штрафы",
                             "Penalties"],
     "race_res: next": ["Дальше",
-                       "Next"]
+                       "Next"],
+    "race_res: exit": ["Завершить",
+                       "Exit"]
 }

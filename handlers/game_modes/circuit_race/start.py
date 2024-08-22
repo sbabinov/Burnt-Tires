@@ -1,6 +1,6 @@
 from ..modes import CircuitRace
 from .preparation import show_players, select_circuit, show_race_info, select_tires, generate_cards
-from .race import start, hold_race, summarize_results, clear_race_data
+from .race import start, hold_race, summarize_results
 
 
 async def start_circuit_race(race: CircuitRace):
@@ -12,4 +12,3 @@ async def start_circuit_race(race: CircuitRace):
     await start(race)
     await hold_race(race)
     await summarize_results(race)
-    clear_race_data(race)
